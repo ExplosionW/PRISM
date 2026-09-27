@@ -4,9 +4,7 @@
 
 PRISM connects peptide activity prediction with conditional sequence generation for selective MMP substrate discovery, with a focus on MMP13. The predictor estimates an 18-enzyme activity profile from a peptide sequence. The separately trained generator proposes peptides conditioned on a desired profile and target identity. Profile regression, ListNet ranking and Pareto-Max selection support competition-aware candidate identification.
 
-![PRISM overview and predictor/generator architecture](assets/prism_overview.png)
-
-[Editable manuscript overview (SVG)](assets/prism_overview.svg)
+![PRISM](assets/prism_overview.png)
 
 ## Included
 
@@ -66,7 +64,11 @@ bash run.sh smoke
 
 This compares all three predictors against reference outputs for four peptides and generates 50 sequences with each generator. It requires no encoder download.
 
-### 3. Run predictor inference on validation, test and OOD data
+### 3. Predictor
+
+![PRISM predictor](assets/predictor_model.png)
+
+Run inference on validation, benchmark test and OOD data:
 
 ```sh
 DEVICE=cuda FEATURE_PRECISION=bf16 bash run.sh predictor
@@ -132,7 +134,7 @@ Generator NLL, sampled peptides, sequence-quality metrics and PRISM-scored activ
 ## Layout
 
 ```text
-assets/                 Manuscript PRISM overview (PNG and SVG)
+assets/                 PRISM overview and predictor architecture
 checkpoints/            Released predictor and generator weights
 data/                  Labelled splits, sequence IDs and source metadata
 predictor/              Prediction, feature extraction and model definitions
