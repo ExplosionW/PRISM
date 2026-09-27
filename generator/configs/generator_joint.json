@@ -1,0 +1,37 @@
+{
+  "variants": [
+    "G2"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "epochs": 50,
+  "batch_size": 128,
+  "conditional_probability": 0.5,
+  "condition_round_step": 0.1,
+  "layers": 3,
+  "d_model": 64,
+  "num_heads": 6,
+  "key_dim": 64,
+  "dff": 64,
+  "input_dropout": 0.25,
+  "attention_dropout": 0.25,
+  "ffn_dropout": 0.1,
+  "optimizer": "Adam",
+  "beta1": 0.9,
+  "beta2": 0.999,
+  "epsilon": 1e-07,
+  "warmup_steps": 4000,
+  "learning_rate_step": "zero-based optimizer iteration; first update lr=0, as upstream",
+  "checkpoint_metric": "validation_joint_nll_all18_targets",
+  "validation_conditional": "mean over all validation peptides and all 18 target identities; G0 computed once because target-independent",
+  "validation_unconditional": "all validation peptides once",
+  "training_targets": "uniform target per training sample; same RNG draws for all variants",
+  "test_use": "not loaded by training or queue; later evaluation after selection frozen",
+  "precision": "float32",
+  "checkpoints": "best.weights.h5 plus one rolling last full checkpoint including optimizer and RNG",
+  "PRISM": "frozen, absent from training graph",
+  "scope": "User requested only our generator, three seeds; G0/G1 not formally trained"
+}

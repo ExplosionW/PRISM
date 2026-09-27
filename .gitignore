@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv*/
+outputs/
+.cache/
+.mplconfig/
+generator/checkpoints/
+generator/optimization_v2/runs/
+generator/optimization_v2/smoke/

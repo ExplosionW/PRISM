@@ -1,0 +1,29 @@
+"""Sequence validity, novelty and motif diversity using the published definitions."""
+from pathlib import Path
+import argparse,collections,re
+import numpy as np,pandas as pd
+from scipy.stats import entropy
+ROOT=Path(__file__).resolve().parents[1]
+def main():
+    ap=argparse.ArgumentParser();ap.add_argument('--pools',type=Path,required=True);ap.add_argument('--output',type=Path,required=True);ap.add_argument('--check-reference',action='store_true');a=ap.parse_args();a.output.mkdir(parents=True,exist_ok=True)
+    known=set()
+    for s in ['train','val','test']:known.update(np.load(ROOT/f'data/benchmark/{s}.npz')['sequences'].tolist())
+    rows=[]
+    for p in sorted(a.pools.glob('PRISM*.csv')):
+        d=pd.read_csv(p,keep_default_na=False);valid=d[d.stopped_normally.astype(str).str.lower().eq('true')&d.sequence.str.fullmatch('[ACDEFGHIKLMNPQRSTVWY]{10}')]
+        if d.empty or valid.empty:raise ValueError(f'No valid peptide attempts in {p.name}')
+        novel=valid[~valid.sequence.isin(known)].sequence.tolist();m=re.search(r'_seed(\d+)_sample(\d+)_T([\d.]+)_(\w+)$',p.stem)
+        if not m:raise ValueError(f'Unexpected pool filename: {p.name}')
+        row=dict(pool=p.stem,seed=int(m[1]),replicate=int(m[2]),temperature=float(m[3]),mode=m[4],attempts=len(d),valid_fraction=len(valid)/len(d),unique_fraction=valid.sequence.nunique()/len(valid),known_fraction=valid.sequence.isin(known).mean(),unique_novel=len(set(novel)))
+        for k in [3,4,5,6]:
+            counts=collections.Counter(s[i:i+k] for s in novel for i in range(11-k));n=sum(counts.values());row.update({f'k{k}_distinct':len(counts),f'k{k}_entropy':float(entropy(list(counts.values()),base=2)) if n else np.nan,f'k{k}_top10_mass':sum(v for _,v in counts.most_common(10))/n if n else np.nan})
+        rows.append(row)
+    if not rows:raise ValueError('No PRISM generation pools found')
+    df=pd.DataFrame(rows);df.to_csv(a.output/'quality_by_repeat.csv',index=False)
+    metrics=['valid_fraction','unique_fraction','known_fraction','unique_novel','k3_entropy','k6_entropy'];g=df.groupby(['temperature','mode'])[metrics].agg(['mean','std']);g.columns=['_'.join(x) for x in g.columns];g.to_csv(a.output/'quality_summary.csv')
+    if a.check_reference:
+        expected=pd.read_csv(ROOT/'reference_results/generator/temperature_results.csv');joint=df.merge(expected,on='pool',suffixes=('_new','_expected'),validate='one_to_one');assert len(joint)==len(df)
+        for k in metrics:np.testing.assert_allclose(joint[k+'_new'],joint[k+'_expected'],rtol=0,atol=1e-10)
+        print('Published sequence-quality values reproduced.')
+    print(g.to_string())
+if __name__=='__main__':main()

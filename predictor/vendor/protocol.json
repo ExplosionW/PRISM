@@ -1,0 +1,42 @@
+{
+  "version": "own_model_ablation_v1_20260913",
+  "status": "specified_before_new_training",
+  "purpose": "Audit component contributions to the fixed own sequence-adapter model; do not select a replacement winner on the historical test set.",
+  "seeds": [0, 1, 2],
+  "split": {"train": 13666, "val": 1200, "test": 2901, "targets": 18, "ids_source": "ck/t2_res_stage_seedSEED.pt"},
+  "endpoint": {"primary": "usable", "K": 100, "retention": 0.8, "risk": "top4", "transfer": "count", "thresholds": "train median activity and positive-margin 90th percentile", "dtype": "float32 labels and predictions; inclusive comparisons; no epsilon", "secondary": ["fraction transfer", "retention failures", "activity-only selection", "same-full-model candidate counts", "centred profile correlation", "competitive margin correlation"]},
+  "existing": ["same-seed frozen base without adapter", "sequence adapter", "identity adapter", "geometry adapter"],
+  "adapter_family": {
+    "base": "exact published t2_res_stage seed-specific checkpoint, frozen",
+    "arms": ["full", "no_pair_rank", "no_qc_product", "linear_update", "shared_query"],
+    "definitions": {
+      "full": "unchanged sequence adapter; reproduction control",
+      "no_pair_rank": "zero coefficient on the adapter's 0.5 pair-ranking loss; retain identical sampled pairs and forward passes",
+      "no_qc_product": "zero the q*context input slice; keep q, context, dimensions and initial weights",
+      "linear_update": "replace 0.25*tanh(logit) with 0.25*logit; identical derivative and output at zero initialization",
+      "shared_query": "form adapter query from unconditioned residue pairs; retain enzyme-conditioned pair states and readout"
+    },
+    "limits": "Context in the sequence arm is learned shared context, not numerical geometry; no_qc_product is a parameterization test, not proof of biological contacts. Existing no-adapter predictions are reused, not counted as a new training run."
+  },
+  "backbone_family": {
+    "arms": ["full", "no_esm", "no_task_lm", "no_lookup", "no_film", "no_pairs", "additive_pairs", "no_metric", "activity_only"],
+    "stages": ["train task backbone with frozen ESM features and no task-LM branch", "add the same pretrained task LM as a residual, freeze inherited tensors for 10 epochs then unfreeze", "freeze selected task backbone and fit the sequence adapter"],
+    "initialization": "Regenerate the same seeded task-layer initialization for every arm; use identical frozen ESM features, enzyme descriptors and pretrained task-LM initialization. Apply the deletion in every training stage, not only at inference or after a full-model checkpoint was trained.",
+    "definitions": {
+      "full": "matched complete three-stage retraining control, separate from the previously selected winning checkpoints",
+      "no_esm": "zero the peptide ESM feature branch before fusion in every stage; enzyme descriptors are retained",
+      "no_task_lm": "zero the task-LM residual in every stage",
+      "no_lookup": "zero the position-specific residue lookup before fusion in every stage",
+      "no_film": "zero enzyme FiLM scale/shift; retain enzyme descriptors for cosine readout",
+      "no_pairs": "zero residue-pair features before the shared trunk in every stage; adapter is mathematically inactive and is not claimed as separately trained",
+      "additive_pairs": "replace ReLU(W_i e_i + W_j e_j + b) by ReLU(W_i e_i + b/2)+ReLU(W_j e_j + b/2), retaining exactly the same parameter shapes; tests local nonlinear pair mixing, not all higher-order interactions",
+      "no_metric": "zero the cosine-readout contribution; retain the linear activity readout",
+      "activity_only": "train all stages on raw activity MSE, zero pair-ranking loss; keep common validation checkpoint criterion and inference selector"
+    },
+    "capacity": "Deletion arms retain nominal parameter shapes to preserve shared initialization; report gradient-active parameters separately. Additive_pairs is the same-parameter-count interaction control.",
+    "limits": "Compare each deletion to the newly retrained full model under the same protocol. Do not substitute historical winning numbers as the matched training control. Activity_only isolates the gradient objective; the common validation criterion and downstream selector are still used."
+  },
+  "training": {"max_epochs_per_stage": 300, "patience": 25, "batch": 64, "n_pair": 256, "learning_rate": 0.001, "weight_decay": 0.001, "adapter_grad_clip": 10, "optimizer": "AdamW", "scheduler": "cosine", "base_loss": "mean activity MSE + 36 centred-profile MSE + 2 hard-margin MSE + 0.5 final-profile pair-ranking", "checkpoint_criterion": "validation mean activity MSE + 36 centred-profile MSE + 2 hard-margin MSE; no test-selected checkpoint", "new_phase_rng": "same per-seed minibatch/pair sampler and global dropout seed across arms; original checkpoints are separately replayed"},
+  "execution": {"device": "remote CUDA only", "automatic_shutdown": false, "download_checkpoints": false, "on_failure": "record traceback and continue independent arms; failed arms remain failed and do not count as completed", "resume": "completed stages skipped only if immutable run signature matches", "test_use": "test predictions are exported only after an arm's checkpoints are frozen; no result-driven changes to the registered arms"},
+  "interpretation": "Report all 18 targets and all 3 seeds, including zero/negative effects. Observed whole-pipeline superiority does not by itself prove a component is necessary or eliminates shortcuts. Historical test set remains retrospective."
+}

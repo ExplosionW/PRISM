@@ -1,0 +1,78 @@
+{
+  "benchmark": {
+    "source": "Kukreja et al. (2015), distributed by the CleaveNet data release",
+    "upstream": "https://github.com/microsoft/cleavenet/tree/4dac67defc99ca35d967ddc76eca0fe8b74afdad/data",
+    "upstream_commit": "4dac67defc99ca35d967ddc76eca0fe8b74afdad",
+    "sizes": {
+      "train": 13666,
+      "val": 1200,
+      "test": 2901
+    },
+    "units": "Released continuous Z-scores, with no additional label normalization",
+    "test_filter": "CleaveNet retained 2901 of 3717 test peptides after excluding Levenshtein distance <3 to its original 14866-peptide training pool",
+    "validation_split": "The original training pool is partitioned into 13666 training and 1200 validation sequences; connected components at Hamming distance <=2 are kept together",
+    "condition_rounding": "Generator conditions only: round labels to 0.1 using NumPy ties-to-even rounding in float64"
+  },
+  "ood": {
+    "source": "Published CleaveNet in-vitro efficiency measurements",
+    "size": 80,
+    "measured_targets": [
+      "MMP1",
+      "MMP10",
+      "MMP12",
+      "MMP13",
+      "MMP14",
+      "MMP17",
+      "MMP2",
+      "MMP20",
+      "MMP3",
+      "MMP7",
+      "MMP8",
+      "MMP9"
+    ],
+    "label_field": "published_efficiency",
+    "axis_order": "peptide, enzyme",
+    "exclusion": "Source-library controls excluded; no exact sequence overlap with train, validation or test",
+    "raw_sources": [
+      {
+        "file": "In_vitro_efficiencies_7B.xlsx",
+        "url": "https://raw.githubusercontent.com/microsoft/cleavenet/4dac67defc99ca35d967ddc76eca0fe8b74afdad/data/In_vitro_efficiencies_7B.xlsx",
+        "sha256": "719b82f9841475bf287713d1b1b8194dc1f321433c19967993d916461d4a71fe",
+        "cached_source_identical": true
+      },
+      {
+        "file": "Raw_in_vitro_cleavage_fold_changes.xlsx",
+        "url": "https://raw.githubusercontent.com/microsoft/cleavenet/4dac67defc99ca35d967ddc76eca0fe8b74afdad/data/Raw_in_vitro_cleavage_fold_changes.xlsx",
+        "sha256": "9355dc492c7226e5359abe9ccf50933b32b22b92124cc2368757ac655eba863b",
+        "cached_source_identical": true
+      },
+      {
+        "file": "cleavenet_design_summary.xlsx",
+        "url": "https://raw.githubusercontent.com/microsoft/cleavenet/4dac67defc99ca35d967ddc76eca0fe8b74afdad/data/cleavenet_design_summary.xlsx",
+        "sha256": "c3c56642ff241afcb83d84d0d66c7c2e877072679cd33da7b36e3056cf5105df",
+        "cached_source_identical": true
+      }
+    ]
+  },
+  "predictor_target_order": [
+    "MMP1",
+    "MMP10",
+    "MMP11",
+    "MMP12",
+    "MMP13",
+    "MMP14",
+    "MMP15",
+    "MMP16",
+    "MMP17",
+    "MMP19",
+    "MMP2",
+    "MMP20",
+    "MMP24",
+    "MMP25",
+    "MMP3",
+    "MMP7",
+    "MMP8",
+    "MMP9"
+  ],
+  "exact_sequence_overlap": 0
+}

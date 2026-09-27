@@ -1,0 +1,81 @@
+Substrate,Sequence,Group,min_train_edit,min_trainval_edit
+DL1,FMPLNFTASG,Efficient generated,3,2
+DL10,IMPLGMRNPI,Efficient generated,3,3
+DL11,PTPYGLRTSG,Efficient generated,4,4
+DL12,PMPLHMLSTG,Efficient generated,2,2
+DL13,IEPLPMRDWT,Efficient generated,3,3
+DL14,GEPFALRTAS,Efficient generated,2,2
+DL15,VSPLAIQGRQ,Efficient generated,5,5
+DL16,PVPLGVRDTA,Efficient generated,4,4
+DL17,QRPLNYISMG,Efficient generated,4,4
+DL18,LWPRELRAQR,Efficient generated,3,3
+DL19,NRPLALTSRY,Efficient generated,4,3
+DL2,LGPYAMTSRG,Efficient generated,2,2
+DL20,FGPYGMYSGM,Efficient generated,4,4
+DL21,DMPLGLRDVQ,Efficient generated,2,2
+DL22,AMPYGLIAIQ,Efficient generated,4,4
+DL23,RIPLGYTASG,Efficient generated,2,2
+DL24,HLPMAFYAQT,Efficient generated,4,4
+DL25,YGPRAVTASG,Selective generated,1,1
+DL26,SGPRAFWGTA,Selective generated,3,2
+DL27,TPPRAFMDGH,Selective generated,4,4
+DL28,FYPRAVMDGV,Selective generated,4,4
+DL29,VAPRAFSDVG,Selective generated,4,4
+DL3,LGPLGITASG,Efficient generated,2,2
+DL30,PGPRSWTASG,Selective generated,2,2
+DL31,PGPRWYTASG,Selective generated,2,2
+DL32,WRPSGFYDPQ,Selective generated,4,4
+DL33,WGPRPFIDEG,Selective generated,5,5
+DL34,QGPRQMTGPV,Selective generated,5,5
+DL35,SGPRPYWGTA,Selective generated,4,2
+DL36,WAPKGMSAPA,Selective generated,5,5
+DL37,MQPSGFVSPY,Selective generated,5,5
+DL38,TMPRPFMDGA,Selective generated,4,4
+DL39,SEPRAYIDTA,Selective generated,4,3
+DL4,MFPLDMRGSY,Efficient generated,4,4
+DL40,GAPSGFRTVT,Selective generated,5,5
+DL41,SAPRVMWGTG,Selective generated,4,4
+DL42,TIPYGFWGPY,Selective generated,5,5
+DL43,VIPLGVKDPV,Selective generated,5,5
+DL44,LQPRAWYDPA,Selective generated,4,4
+DL45,VAPYGFRTAS,Selective generated,3,3
+DL46,VPPRPFYGPA,Selective generated,3,3
+DL47,LAPRSYWGPV,Selective generated,4,4
+DL48,FAPRQMFDPG,Selective generated,4,4
+DL49,VAPLPMRAWL,Efficient baseline with DL predictor,4,4
+DL5,TAPLGIRDGT,Efficient generated,4,4
+DL50,LAPLGLTTSK,Efficient baseline with DL predictor,4,4
+DL51,LGPYAMKAPW,Efficient baseline with DL predictor,3,3
+DL52,VRPLAMYDLV,Efficient baseline with DL predictor,4,4
+DL53,HIPRWFHSEW,Selective baseline,5,5
+DL54,VPPVGVSAGG,Selective baseline,3,3
+DL55,HGPRNVTDAW,Selective baseline,3,3
+DL56,HAVSYVRDGR,Selective baseline,5,5
+DL6,IAPLGLTASG,Efficient generated,2,2
+DL66,HGPRAVTAAG,Selective baseline with DL predictor,3,3
+DL67,VAPRGFVDQG,Selective baseline with DL predictor,5,5
+DL68,MMPRAFYDPG,Selective baseline with DL predictor,4,4
+DL69,RAPKGFFSAG,Selective baseline with DL predictor,5,5
+DL7,MYPLGMQVGV,Efficient generated,4,4
+DL70,PYPAAMMDIK,Efficient baseline with DL predictor,5,5
+DL71,YGPYALVAGA,Efficient baseline with DL predictor,3,3
+DL72,GKPLPLLAMT,Efficient baseline with DL predictor,4,4
+DL73,LFPLAMMDMT,Efficient baseline with DL predictor,5,5
+DL74,MYPRAFHGWA,Selective baseline with DL predictor,4,4
+DL75,VAPVGFFGWY,Selective baseline with DL predictor,3,3
+DL76,SMPKGFTGSA,Selective baseline with DL predictor,4,4
+DL77,VPPVGVWAPF,Selective baseline with DL predictor,5,5
+DL78,IPPVALIATG,Efficient baseline,4,4
+DL79,KATHAIRHKG,Efficient baseline,5,5
+DL8,HMPYELRSVR,Efficient generated,4,4
+DL80,NGPFMLHLLR,Efficient baseline,5,5
+DL81,IFALPRTVEI,Efficient baseline,5,5
+DL82,LGYESLWIPR,Efficient baseline,5,5
+DL83,SKAGHLLDEQ,Efficient baseline,4,4
+DL84,LVPRILIFEI,Efficient baseline,5,5
+DL85,VHDSRMIQPA,Efficient baseline,5,5
+DL86,HYPVAWWATG,Selective baseline,5,5
+DL87,VAPVAVRGSG,Selective baseline,4,4
+DL88,HGPRRWQDLR,Selective baseline,5,5
+DL89,HYPLWYTGES,Selective baseline,3,3
+DL9,QAPLAVLSGQ,Efficient generated,4,4
