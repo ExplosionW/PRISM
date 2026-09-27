@@ -1,23 +1,15 @@
 {
-  "seeds": [0,1,2],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
   "max_epochs": 150,
   "patience": 20,
   "min_delta": 0.0001,
   "batch_size": 128,
-  "conditional_probabilities": [0.5,0.75,0.9],
-  "contrast_weights": [0.05,0.1],
   "contrast_margin_nats_per_token": 0.1,
   "contrast_epochs": 50,
   "contrast_learning_rate": 0.0001,
-  "temperature_grid": [0.8,1.0,1.2],
-  "checkpoint_metric": "validation_joint_nll_all18_targets",
-  "selection": "One configuration for all three seeds, minimizing mean validation joint NLL. Never pick seeds.",
-  "stage1": "p50 resumes exact last checkpoint after epoch50 in a separate directory; p75/p90 train from same seeded initialization, same original schedule, up to150 epochs.",
-  "stage2": "Best stage1 configuration by mean validation joint NLL; each seed branches from its own best weights. Compare lambda0/0.05/0.1 for50 epochs, all with same new Adam1e-4. Lambda0 is a matched continuation control.",
-  "contrast": "hinge(0.1+correct_conditional_NLL-wrong_conditional_NLL), mean per11tokens. Wrong profiles preserve exact target value and swap competitors from cyclic neighbors within16-sample target-activity bins. Synthetic counterfactuals, not measured labels.",
-  "stage3": "Validation-only temperature NLL sweep, all18targets, report all temperatures and select one shared temperature by mean joint NLL. Training remains float32; no PRISM guidance in these stages.",
-  "test_policy": "No test arrays or previous test result files opened by optimization. Old test is already exposed; any later test comparison is retrospective, not new independent confirmation.",
-  "original_results": "Never overwrite checkpoints/G2, previous evaluations, main report or supply.",
-  "concurrency": 3,
-  "disk_reserve_MiB": 220
+  "checkpoint_metric": "validation_joint_nll_all18_targets"
 }

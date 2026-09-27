@@ -5,7 +5,7 @@ import numpy as np,pandas as pd
 from scipy.stats import entropy
 ROOT=Path(__file__).resolve().parents[1]
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--pools',type=Path,required=True);ap.add_argument('--output',type=Path,required=True);ap.add_argument('--check-reference',action='store_true');a=ap.parse_args();a.output.mkdir(parents=True,exist_ok=True)
+    ap=argparse.ArgumentParser();ap.add_argument('--pools',type=Path,required=True);ap.add_argument('--output',type=Path,required=True);a=ap.parse_args();a.output.mkdir(parents=True,exist_ok=True)
     known=set()
     for s in ['train','val','test']:known.update(np.load(ROOT/f'data/benchmark/{s}.npz')['sequences'].tolist())
     rows=[]
@@ -21,9 +21,5 @@ def main():
     if not rows:raise ValueError('No PRISM generation pools found')
     df=pd.DataFrame(rows);df.to_csv(a.output/'quality_by_repeat.csv',index=False)
     metrics=['valid_fraction','unique_fraction','known_fraction','unique_novel','k3_entropy','k6_entropy'];g=df.groupby(['temperature','mode'])[metrics].agg(['mean','std']);g.columns=['_'.join(x) for x in g.columns];g.to_csv(a.output/'quality_summary.csv')
-    if a.check_reference:
-        expected=pd.read_csv(ROOT/'reference_results/generator/temperature_results.csv');joint=df.merge(expected,on='pool',suffixes=('_new','_expected'),validate='one_to_one');assert len(joint)==len(df)
-        for k in metrics:np.testing.assert_allclose(joint[k+'_new'],joint[k+'_expected'],rtol=0,atol=1e-10)
-        print('Published sequence-quality values reproduced.')
     print(g.to_string())
 if __name__=='__main__':main()

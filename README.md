@@ -13,7 +13,7 @@ PRISM connects peptide activity prediction with conditional sequence generation 
 - Three released PRISM predictor checkpoints and three final generator checkpoints (seeds 0, 1 and 2).
 - Labelled training, validation, benchmark test and OOD datasets, with sequence IDs and enzyme order.
 - The packaged prediction, generation and generator-training implementations, called through `run.sh`.
-- Per-seed reference predictions, generated sequence pools and results for checking reproduction.
+- Evaluation scripts and small checkpoint-loading tests.
 
 This release focuses on PRISM. The primary predictor reproduction route is inference from the released checkpoints. Baseline retraining and manuscript figure generation are outside this package.
 
@@ -44,20 +44,19 @@ export PYTORCH_PYTHON="$PWD/.venv-predictor/bin/python"
 export TENSORFLOW_PYTHON="$PWD/.venv-generator/bin/python"
 ```
 
-For metric replay alone, install `requirements/metrics.txt` and set `METRICS_PYTHON` to that environment's Python. GPU runs require working CUDA support for the respective framework.
+GPU runs require working CUDA support for the respective framework. For evaluating your saved predictions in a separate environment, install `requirements/metrics.txt` and set `METRICS_PYTHON` to that environment's Python.
 
 ## Run
 
 Run these commands from the repository root. Results are written to `outputs/` by default.
 
-### 1. Verify the release and reproduce metrics from saved outputs
+### 1. Verify the release
 
 ```sh
 bash run.sh verify
-bash run.sh replay
 ```
 
-`verify` checks file hashes, sequence identities, label arrays and split separation. `replay` recomputes selection and generation-quality metrics from the supplied PRISM predictions and sampled pools, and checks them against the reference results. It does not run the neural networks.
+`verify` checks file hashes, sequence identities, label arrays and split separation.
 
 ### 2. Check all six model checkpoints
 
@@ -75,7 +74,7 @@ DEVICE=cuda FEATURE_PRECISION=bf16 bash run.sh predictor
 # DEVICE=cpu FEATURE_PRECISION=fp32 bash run.sh predictor
 ```
 
-This extracts frozen ESM-2 residue features, runs each PRISM checkpoint, selects candidates and calculates per-enzyme and aggregate results. ESM-2 650M is downloaded from Hugging Face on first use; the encoder revision is pinned in `predictor/extract_features.py`. Extracted features are reused from `outputs/features/`. The full feature cache is not included. Differences in device or numerical precision can slightly change predictions and rankings near ties; `replay` provides the exact saved-output reference.
+This extracts frozen ESM-2 residue features, runs each PRISM checkpoint, selects candidates and calculates per-enzyme and aggregate results. ESM-2 650M is downloaded from Hugging Face on first use; the encoder revision is pinned in `predictor/extract_features.py`. Extracted features are reused from `outputs/features/`. The full feature cache is not included. Differences in device or numerical precision can slightly change predictions and rankings near ties.
 
 ### 4. Evaluate and sample the generator
 
@@ -95,11 +94,9 @@ MODE=unconditional TEMPERATURE=1.0 bash run.sh generator
 
 ```sh
 bash run.sh score-generated
-# Or score the supplied reference pools:
-# POOL_DIR="$PWD/reference_results/generator/pools" bash run.sh score-generated
 ```
 
-This scores unique novel canonical peptides with the three-seed PRISM predictor ensemble. It exports activity profiles, mean predicted MMP13 activity, target-minus-mean-competitor selectivity, target-dominance frequency and top-100 selectivity. The scorer is explicitly recorded as PRISM. The functional columns in the supplied historical `temperature_results.csv` use the released CleaveNet scoring ensemble and are not the reference for this PRISM-scored command; see [reproduction details](docs/REPRODUCTION.md).
+This scores unique novel canonical peptides with the three-seed PRISM predictor ensemble. It exports activity profiles, mean predicted MMP13 activity, target-minus-mean-competitor selectivity, target-dominance frequency and top-100 selectivity. The scorer is explicitly recorded as PRISM. See [evaluation details](docs/REPRODUCTION.md).
 
 ### Optional: train the generator
 
@@ -118,16 +115,19 @@ bash run.sh help
 
 Defaults are seeds `0 1 2`, temperature `1.2`, mode `selective`, and 400 attempts per template. `PYTORCH_PYTHON`, `TENSORFLOW_PYTHON` and `METRICS_PYTHON` select the Python executables. `FEATURE_DIR` reuses precomputed features; `POOL_DIR` selects pools for scoring.
 
-## Reference results
+## Evaluation outputs
 
-These are macro-averages over enzymes, then means over the three seeds. They are **not MMP13-only precision**; per-enzyme values are in `reference_results/PRISM_by_target.csv`.
+`run.sh predictor` writes metrics to `outputs/predictor/metrics/`:
 
-| Evaluation | Selection precision | Competitor-dominated selections (SR) |
-| --- | ---: | ---: |
-| Benchmark, 100 peptides per enzyme | 7.09% | 64.63% |
-| OOD, 5 peptides per measured enzyme | 10.56% | 71.67% |
+- `by_target.csv`: precision and SR for each target and seed.
+- `by_seed.csv` and `summary.csv`: per-seed and aggregate results.
+- `selected_peptides.csv`: selected sequences and label-based outcomes.
+- `regression_by_target.csv`: activity-prediction metrics.
+- `thresholds.csv`: activity and selectivity thresholds.
 
-Per-seed generator test NLL is in `reference_results/generator/test_nll.csv`. Generated pools and their quality reference results are under `reference_results/generator/`. Metric definitions, thresholds and scorer identities are documented in [REPRODUCTION.md](docs/REPRODUCTION.md).
+The `dataset` column identifies `benchmark` or `ood`. The `protocol` column describes Pareto-Max selection: `pareto_max_fixed_pool_size` uses the validation-selected candidate-pool size for the benchmark, and `pareto_max_full_pool` uses all available OOD candidates. The selection budgets are 100 and 5 peptides per enzyme, respectively.
+
+Generator NLL, sampled peptides, sequence-quality metrics and PRISM-scored activity profiles are written to `outputs/generator/`. These outputs are produced when you run the models and are excluded from version control. See [REPRODUCTION.md](docs/REPRODUCTION.md) for metric definitions.
 
 ## Layout
 
@@ -138,11 +138,10 @@ data/                  Labelled splits, sequence IDs and source metadata
 predictor/              Prediction, feature extraction and model definitions
 generator/              Conditional decoder, sampling and training code
 evaluation/             Selection, generation-quality and scoring evaluation
-reference_results/      Per-seed predictions, samples and reference metrics
 requirements/           Python dependencies
 tests/                  Small predictor input and reference-output fixture
 run.sh                  Unified entry point
 SHA256SUMS              Release file hashes
 ```
 
-See [third-party notices](THIRD_PARTY_NOTICES.md) for upstream code and data attribution. Upload this folder's contents with `README.md` at the repository root; outputs and local environments are excluded by `.gitignore`.
+See [third-party notices](THIRD_PARTY_NOTICES.md) for upstream code and data attribution. Generated outputs and local environments are excluded by `.gitignore`.

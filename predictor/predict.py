@@ -6,9 +6,8 @@ from pathlib import Path
 import sys,argparse
 import numpy as np
 import torch
-V=Path(__file__).resolve().parent/'vendor';sys.path.insert(0,str(V))
-import own_model_ablations as m
-from gpu_mlm_pretrain import DeCleaveLM
+import model as m
+from model import DeCleaveLM
 
 def load(path,device='cpu'):
  ck=torch.load(path,map_location='cpu',weights_only=False);s=ck['state'];c=ck['model_cfg']
@@ -21,7 +20,7 @@ def load(path,device='cpu'):
 def predict(net,sequences,features,device='cpu',batch=128):
  assert features.shape==(len(sequences),10,1280)
  assert all(len(s)==10 and set(s)<=set('ACDEFGHIKLMNPQRSTVWY') for s in sequences)
- b=net.base;tokens=torch.tensor(m.r8.encode(sequences));out=[]
+ b=net.base;tokens=torch.tensor(m.encode(sequences));out=[]
  with torch.inference_mode():
   for i in range(0,len(tokens),batch):
    e=b.residues(tokens[i:i+batch].to(device),torch.as_tensor(np.array(features[i:i+batch]),device=device));hp=b.body(b.condition(e).flatten(0,1)).reshape(len(e),18,-1);raw=b.raw(hp);y=b.a[None]+b.g(b.body(e))+raw-raw.mean(1,keepdim=True);out.append(net(e,y,raw).cpu().numpy())

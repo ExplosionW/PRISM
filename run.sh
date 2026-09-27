@@ -25,7 +25,6 @@ help() {
 Usage: bash run.sh COMMAND
 
   verify           Verify files, labelled datasets and disjoint sequence splits.
-  replay           Recompute published metrics from bundled PRISM predictions/pools.
   smoke            Load all predictor weights and sample 50 peptides per generator.
   predictor        Extract ESM features; predict val/test/OOD; evaluate all three seeds.
   generator        Evaluate test NLL and generate MMP13-conditioned peptide pools.
@@ -49,10 +48,6 @@ mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 FEATURE_DIR="${FEATURE_DIR:-$OUT/features}"
 verify() { "$METRICS_PYTHON" evaluation/verify_data.py; }
-replay() {
-  "$METRICS_PYTHON" evaluation/evaluate_selection.py --predictions reference_results/predictor --output "$OUT/replay/predictor" --seeds $SEEDS --check-reference
-  "$METRICS_PYTHON" evaluation/generator_quality.py --pools reference_results/generator/pools --output "$OUT/replay/generator" --check-reference
-}
 smoke() {
   "$PYTORCH_PYTHON" evaluation/smoke_predictor.py
   mkdir -p "$OUT/smoke/pools"
@@ -95,7 +90,7 @@ train_generator() {
   done
 }
 case "$1" in
-  verify) verify;; replay) replay;; smoke) smoke;; predictor) predictor;; generator) generator;;
+  verify) verify;; smoke) smoke;; predictor) predictor;; generator) generator;;
   score-generated) score_generated;; all) verify; predictor; generator; score_generated;;
   train-generator) train_generator;; *) help; exit 2;;
 esac

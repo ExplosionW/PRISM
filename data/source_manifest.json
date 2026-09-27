@@ -37,20 +37,17 @@
       {
         "file": "In_vitro_efficiencies_7B.xlsx",
         "url": "https://raw.githubusercontent.com/microsoft/cleavenet/4dac67defc99ca35d967ddc76eca0fe8b74afdad/data/In_vitro_efficiencies_7B.xlsx",
-        "sha256": "719b82f9841475bf287713d1b1b8194dc1f321433c19967993d916461d4a71fe",
-        "cached_source_identical": true
+        "sha256": "719b82f9841475bf287713d1b1b8194dc1f321433c19967993d916461d4a71fe"
       },
       {
         "file": "Raw_in_vitro_cleavage_fold_changes.xlsx",
         "url": "https://raw.githubusercontent.com/microsoft/cleavenet/4dac67defc99ca35d967ddc76eca0fe8b74afdad/data/Raw_in_vitro_cleavage_fold_changes.xlsx",
-        "sha256": "9355dc492c7226e5359abe9ccf50933b32b22b92124cc2368757ac655eba863b",
-        "cached_source_identical": true
+        "sha256": "9355dc492c7226e5359abe9ccf50933b32b22b92124cc2368757ac655eba863b"
       },
       {
         "file": "cleavenet_design_summary.xlsx",
         "url": "https://raw.githubusercontent.com/microsoft/cleavenet/4dac67defc99ca35d967ddc76eca0fe8b74afdad/data/cleavenet_design_summary.xlsx",
-        "sha256": "c3c56642ff241afcb83d84d0d66c7c2e877072679cd33da7b36e3056cf5105df",
-        "cached_source_identical": true
+        "sha256": "c3c56642ff241afcb83d84d0d66c7c2e877072679cd33da7b36e3056cf5105df"
       }
     ]
   },

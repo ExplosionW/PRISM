@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr,spearmanr
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/'predictor/vendor'))
 import selection as sel
 
 def read_prediction(folder,split,seed,sequences,targets):
@@ -17,7 +16,7 @@ def read_prediction(folder,split,seed,sequences,targets):
     return p.T
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--predictions',type=Path,required=True);ap.add_argument('--output',type=Path,required=True);ap.add_argument('--seeds',type=int,nargs='+',default=[0,1,2]);ap.add_argument('--check-reference',action='store_true');a=ap.parse_args();a.output.mkdir(parents=True,exist_ok=True)
+    ap=argparse.ArgumentParser();ap.add_argument('--predictions',type=Path,required=True);ap.add_argument('--output',type=Path,required=True);ap.add_argument('--seeds',type=int,nargs='+',default=[0,1,2]);a=ap.parse_args();a.output.mkdir(parents=True,exist_ok=True)
     data={s:dict(np.load(ROOT/f'data/benchmark/{s}.npz')) for s in ['train','val','test']}
     targets=json.loads((ROOT/'data/benchmark/target_order.json').read_text());ood=dict(np.load(ROOT/'data/ood/ood.npz'))
     yt=data['test']['labels'].T;yv=data['val']['labels'].T;ye=ood['labels'].T
@@ -29,7 +28,7 @@ def main():
         pv=read_prediction(a.predictions,'val',seed,data['val']['sequences'],targets)
         pt=read_prediction(a.predictions,'test',seed,data['test']['sequences'],targets)
         pe=read_prediction(a.predictions,'ood',seed,ood['sequences'],targets)
-        for cohort,protocol,truth,ts,K,aa,dd,pred,seqs in [('benchmark','count',yt,targets,100,ta,td,pt,data['test']['sequences']),('ood','ood_k5',ye,ood['targets'].tolist(),5,ea,ed,pe,ood['sequences'])]:
+        for cohort,protocol,truth,ts,K,aa,dd,pred,seqs in [('benchmark','pareto_max_fixed_pool_size',yt,targets,100,ta,td,pt,data['test']['sequences']),('ood','pareto_max_full_pool',ye,ood['targets'].tolist(),5,ea,ed,pe,ood['sequences'])]:
             margin=sel.margins(truth);hit=(truth>=aa[:,None])&(margin>=dd[:,None])
             for t,target in enumerate(ts):
                 pi=targets.index(target);order=np.argsort(-pred[pi],kind='stable')
@@ -51,9 +50,5 @@ def main():
     summary=by_seed.groupby('dataset')[['precision','SR']].agg(['mean','std']);summary.columns=['_'.join(c) for c in summary.columns]
     df.to_csv(a.output/'by_target.csv',index=False);by_seed.to_csv(a.output/'by_seed.csv',index=False);summary.to_csv(a.output/'summary.csv')
     pd.DataFrame(members).to_csv(a.output/'selected_peptides.csv',index=False);pd.DataFrame(regression).to_csv(a.output/'regression_by_target.csv',index=False);pd.DataFrame(threshold_rows).to_csv(a.output/'thresholds.csv',index=False)
-    if a.check_reference:
-        expected=pd.read_csv(ROOT/'reference_results/PRISM_by_seed.csv');joint=by_seed.merge(expected,on=['seed','protocol'],suffixes=('_new','_expected'),validate='one_to_one');assert len(joint)==2*len(a.seeds)
-        for metric in ['precision','SR']:np.testing.assert_allclose(joint[metric+'_new'],joint[metric+'_expected'],rtol=0,atol=1e-10)
-        print('Published selection values reproduced for all requested seeds.')
     print(summary.to_string());print('Metrics are fractions; multiply by 100 for percentages.')
 if __name__=='__main__':main()

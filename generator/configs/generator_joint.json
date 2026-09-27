@@ -31,7 +31,5 @@
   "training_targets": "uniform target per training sample; same RNG draws for all variants",
   "test_use": "not loaded by training or queue; later evaluation after selection frozen",
   "precision": "float32",
-  "checkpoints": "best.weights.h5 plus one rolling last full checkpoint including optimizer and RNG",
-  "PRISM": "frozen, absent from training graph",
-  "scope": "User requested only our generator, three seeds; G0/G1 not formally trained"
+  "checkpoints": "best.weights.h5 plus one rolling last full checkpoint including optimizer and RNG"
 }
