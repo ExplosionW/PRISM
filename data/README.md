@@ -42,4 +42,4 @@ OOD efficiencies and benchmark Z-scores have different units. OOD candidate rank
 
 ## Verification
 
-`bash run.sh verify` checks sequence identities, label parity between CSV and NPZ, canonical token encoding, target order and absence of exact sequence overlap between every pair of splits. SHA-256 hashes cover the released files. Training and generation-template selection use only `benchmark/train.*`.
+`bash run.sh verify` checks sequence identities, label parity between CSV and NPZ, canonical token encoding, target order and absence of exact sequence overlap between every pair of splits. Training and generation-template selection use only `benchmark/train.*`.

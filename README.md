@@ -54,7 +54,7 @@ Run these commands from the repository root. Results are written to `outputs/` b
 bash run.sh verify
 ```
 
-`verify` checks file hashes, sequence identities, label arrays and split separation.
+`verify` checks sequence identities, label arrays and split separation.
 
 ### 2. Check all six model checkpoints
 
@@ -143,7 +143,6 @@ evaluation/             Selection, generation-quality and scoring evaluation
 requirements/           Python dependencies
 tests/                  Small predictor input and reference-output fixture
 run.sh                  Unified entry point
-SHA256SUMS              Release file hashes
 ```
 
 See [third-party notices](THIRD_PARTY_NOTICES.md) for upstream code and data attribution. Generated outputs and local environments are excluded by `.gitignore`.
