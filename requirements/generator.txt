@@ -1,4 +1,4 @@
-tensorflow==2.18.0
-keras==3.15.1
-numpy==2.0.2
+# Release inference and DPO continuation. CUDA experiments used torch 2.8.0+cu128.
+torch==2.8.0
+numpy>=1.26,<3
 pandas>=2.2,<3

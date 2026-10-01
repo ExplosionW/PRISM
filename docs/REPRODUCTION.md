@@ -18,19 +18,17 @@ For OOD, the selection budget is five per measured enzyme and the candidate pool
 
 ## Generator
 
-The generator is an independently trained autoregressive decoder with 2,628,758 parameters, conditioned on enzyme-response profiles and target identity. It is not a reversal of the predictor weights. The final G2 checkpoints are the three seed-specific checkpoints from the zero-contrast-weight continuation. The upstream directory name `contrast0` refers to that training implementation; the released final loss has contrast weight zero.
+The default generator is **PRISM G1 + Pareto-DPO**, with three released fixed-final checkpoints. Its standalone model, exact trainable parameter scope, DPO continuation, inputs and sampling kernel are documented in [generator/README.md](../generator/README.md). The earlier TensorFlow G2 sources and weights are retained but are not the default `run.sh` implementation.
 
-The training entry point calls the original packaged stages: 50 initial epochs, extended training up to 150 total epochs with validation stopping, then continuation for up to 50 epochs using Adam at 1e-4 and zero contrast weight. Validation stopping follows `generator/optimization_v2/protocol.json`. The conditional sampling probability during training is 0.5.
+Current NLL uses the 1,434-peptide generator development split and target MMP13, including STOP. Joint NLL averages conditional and unconditional token NLL. The split was repeatedly used for development and must not be described as independent confirmation.
 
-Conditional test NLL is averaged over 18 target identities. Unconditional NLL is evaluated separately. Joint NLL is their equally weighted mean. Each is teacher-forced token cross-entropy, including the termination token. `generator/evaluate_checkpoint.py` loads each final checkpoint before evaluation.
+Generation retains every attempt. Normal STOP plus ten canonical amino acids defines legality; uniqueness is measured among legal sequences. Novelty uses the fixed public-sequence/preference-pair union in `generator/data/known_sequences.txt` (31,383 IDs). This differs from the older 17,767-ID benchmark-only exclusion. Any external baseline must use the same exclusion set before comparing new-peptide yield. K-mer entropy is a descriptive distribution statistic, not a quantity assumed to improve whenever it increases.
 
-Default generation uses 50 training-derived MMP13-selective profiles and 400 attempts per profile at temperature 1.2. Selective templates rank measured MMP13 activity minus the mean activity of the other 17 enzymes; efficient templates rank MMP13 activity alone. Conditions use the rounded training profiles. The existing stateless sampler and repetition penalty 1.2 are preserved.
+### Scorer identity and target endpoint
 
-Raw pools retain all attempts. Validity requires normal termination and a canonical 10-mer. Uniqueness is calculated among valid sequences; known-sequence overlap uses the training, validation and benchmark-test sequence union. Novel unique sequences are used for predictor scoring. K-mer entropy uses novel valid attempts, retaining repeat occurrences, as in the supplied result analysis.
+`score-generated` averages the repository's three released PRISM predictors. It is a self-scoring utility; these outputs are not the historical official/native/ListNet cross-scores. The principal predicted joint event is MMP13 Z > 1 and MMP13 Z greater than the maximum of the other 17 scores. Count different legal novel hits over the full pool and divide by all attempts for yield per attempt. Target-minus-mean17 is a separate selectivity statistic.
 
-### Scorer identity
-
-`run.sh score-generated` averages all three released PRISM predictors. Output metrics are predicted MMP13 activity, target-minus-mean-competitor selectivity, the fraction with MMP13 above all competitors, and top-100 selectivity. Its raw ensemble profiles are also saved.
+Top-24/100 use `min(Z13 - 1, Z13 - max17)` in descending order, with sequence order breaking ties. Candidates are deduplicated before selection and never refilled. Selected rates are predicted outcomes, not measured precision. Replicates are averaged within training seed before means and sample SD across seeds; a single seed has no estimated training-seed SD.
 
 ## Output labels
 
