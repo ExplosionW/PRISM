@@ -2,7 +2,7 @@
 
 **Peptide Regression and Inverse design for Selective Metalloproteinase substrates**
 
-PRISM predicts peptide activity across 18 MMPs and generates candidate substrates targeting MMP13. This repository provides the code, data and checkpoints for running PRISM.
+PRISM predicts peptide activity across 18 MMPs and generates candidate substrates targeting MMP13.
 
 ![PRISM](assets/prism_overview.png)
 
@@ -61,7 +61,7 @@ SEEDS="0" OUTPUT_DIR="$PWD/my_results" bash run.sh generator
 DEVICE=cuda bash run.sh train-generator
 ```
 
-Runs 1,000 DPO updates from the packaged initialization weights. New checkpoints are saved in `outputs/generator/dpo/`. See [generator commands](generator/README.md) for resuming training and running individual checkpoints.
+Runs 1,000 DPO updates from the initialization weights. [Single-seed and resume commands](generator/README.md).
 
 ### Settings
 
@@ -94,7 +94,7 @@ Runs 1,000 DPO updates from the packaged initialization weights. New checkpoints
 | `predictor/`, `generator/`, `evaluation/` | Model and evaluation code |
 | `requirements/`, `tests/`, `assets/` | Dependencies, checkpoint checks and figures |
 
-Data sizes and formats are listed in [data/README.md](data/README.md) and [generator/data/README.md](generator/data/README.md). Benchmark data originate from Kukreja et al. via the CleaveNet release; OOD labels are published CleaveNet experimental measurements.
+Data formats: [predictor](data/README.md) · [generator](generator/data/README.md).
 
 ### Outputs
 

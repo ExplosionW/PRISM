@@ -23,4 +23,4 @@ Sampling options include `--mode selective|unconditional`, `--temperature`, `--s
 
 The output CSV retains all attempts. `sequence` contains the generated string; `stopped_normally`, `raw_length` and `filter_reason` record its status. `condition_train_index` identifies the fitting sequence supplying the requested profile, or is -1 for unconditional generation.
 
-Weights are in `checkpoints/`; DPO starting weights are in `initialization/`. Training and sampling settings are recorded in [configs/pareto_dpo.json](configs/pareto_dpo.json). Input files are described in [data/README.md](data/README.md).
+[Settings](configs/pareto_dpo.json) · [Input files](data/README.md).

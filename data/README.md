@@ -27,5 +27,3 @@ OOD NPZ files contain `sequences`, `labels` (80 × 12 published efficiencies), `
 ## Source
 
 Benchmark measurements originate from Kukreja et al., distributed with CleaveNet; OOD labels come from published CleaveNet experiments. Source links and preprocessing metadata are in [source_manifest.json](source_manifest.json).
-
-Run `bash run.sh verify` from the repository root to check the files and split separation. Generator inputs are documented in [generator/data/README.md](../generator/data/README.md).
