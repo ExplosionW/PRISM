@@ -69,4 +69,4 @@ For selection, `active_bottleneck` ranks the entire legal, novel, deduplicated p
 
 `score-generated` uses the three released PRISM predictor checkpoints. Its activity scores and qualification rates are predicted outcomes. Sampling repeats are averaged within each training seed before calculating means and sample SD across training seeds.
 
-See [third-party notices](../THIRD_PARTY_NOTICES.md) for CleaveNet-derived code and data attribution, and [DPO](https://arxiv.org/abs/2305.18290) for the preference objective.
+The preference objective follows [Direct Preference Optimization (DPO)](https://arxiv.org/abs/2305.18290).

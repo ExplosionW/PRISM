@@ -146,4 +146,4 @@ tests/                  Small predictor input and reference-output fixture
 run.sh                  Unified entry point
 ```
 
-See [third-party notices](THIRD_PARTY_NOTICES.md) for upstream code and data attribution. Generated outputs and local environments are excluded by `.gitignore`.
+Generated outputs and local environments are excluded by `.gitignore`.
