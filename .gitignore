@@ -9,5 +9,3 @@ generator/checkpoints/*
 !generator/checkpoints/seed0.pt
 !generator/checkpoints/seed1.pt
 !generator/checkpoints/seed2.pt
-generator/optimization_v2/runs/
-generator/optimization_v2/smoke/

@@ -1,4 +1,4 @@
-"""Reproduce fixed-1000-update Pareto-DPO from the packaged G1 initialization.
+"""Reproduce fixed-1000-update Pareto-DPO from the packaged generator initialization.
 
 Preferences are computational PRISM predictions, not experimental measurements.
 Only the original DPO parameter subset is updated. No best-epoch selection.

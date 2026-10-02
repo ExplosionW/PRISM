@@ -1,4 +1,4 @@
-"""PRISM G1 equal-weight profile/competition experts, with released DPO weights.
+"""PRISM equal-weight profile/competition experts, with released DPO weights.
 
 Attention and positional encoding follow the CleaveNet-derived implementation.
 State-dict names and arithmetic order match the trained models.

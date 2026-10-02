@@ -1,5 +1,5 @@
 {
-  "model": "PRISM G1 + Pareto-DPO",
+  "model": "PRISM with DPO",
   "seeds": [0, 1, 2],
   "mixture_mode": "uniform",
   "target": "MMP13",

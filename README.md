@@ -8,23 +8,23 @@ PRISM connects peptide activity prediction with conditional sequence generation 
 
 ## Included
 
-- Three released PRISM predictor checkpoints and three PRISM G1 + Pareto-DPO generator checkpoints (seeds 0, 1 and 2), plus the G1 weights needed to reproduce DPO.
+- Three released PRISM predictor checkpoints and three PRISM generator checkpoints trained with DPO (seeds 0, 1 and 2), plus the initialization weights needed to reproduce DPO.
 - Labelled training, validation, benchmark test and OOD datasets, with sequence IDs and enzyme order.
 - The packaged prediction, generation and generator-training implementations, called through `run.sh`.
 - Evaluation scripts and small checkpoint-loading tests.
 
-This release focuses on PRISM. The primary predictor reproduction route is inference from the released checkpoints. Baseline retraining and manuscript figure generation are outside this package.
+This release focuses on PRISM. Predictor results are reproduced by running inference and evaluation with the released checkpoints.
 
 ## Data
 
 | Dataset | Peptides | Measured enzymes | Location | Use |
 | --- | ---: | ---: | --- | --- |
-| Training | 13,666 | 18 | `data/benchmark/train.*` | Model fitting and generation templates |
+| Training | 13,666 | 18 | `data/benchmark/train.*` | Predictor model fitting |
 | Validation | 1,200 | 18 | `data/benchmark/val.*` | Model and selection settings |
 | Benchmark test | 2,901 | 18 | `data/benchmark/test.*` | Held-out evaluation |
 | OOD | 80 | 12 | `data/ood/ood.*` | Generalization evaluation using published experimental labels |
 
-The current generator uses its separate 10,954-peptide fit and 1,434-peptide development subsets, plus computational preference pairs; see [generator data](generator/data/README.md). The table above describes the existing predictor benchmark, not the current generator training split.
+The current generator uses its separate 10,954-peptide fit and 1,434-peptide development subsets, plus computational preference pairs; see [generator data](generator/data/README.md). The table above lists the predictor splits.
 
 All sequences are canonical 10-mers. These four sets have no exact sequence overlap. OOD peptides are separate from training, validation and benchmark test data; they are not used for model fitting. Predictions cover all 18 enzymes, including on OOD peptides.
 
@@ -32,7 +32,7 @@ The benchmark comes from the Kukreja et al. dataset distributed with CleaveNet; 
 
 ## Installation
 
-The predictor and current generator both use PyTorch. Python 3.12 and Linux CUDA are recommended for reproducing training; CPU inference and small generation checks are also supported. Install both requirement sets in the same environment, or choose separate executables as below. The earlier TensorFlow generator is retained as legacy source and uses `requirements/generator-legacy.txt`.
+The predictor and current generator both use PyTorch. Python 3.12 and Linux CUDA are recommended for reproducing training; CPU inference and small generation checks are also supported. Install both requirement sets in the same environment, or choose separate executables as below.
 
 ```sh
 python3.12 -m venv .venv-predictor
@@ -86,7 +86,7 @@ This extracts frozen ESM-2 residue features, runs each PRISM checkpoint, selects
 bash run.sh generator
 ```
 
-For each training seed, this evaluates conditional/unconditional NLL on the packaged generator development split, then makes 20,000 attempts per sampling replicate from 50 fixed fit-derived MMP13 profiles at temperature 1.2. The defaults use two sampling replicates. Raw pools retain invalid attempts, duplicates and known sequences. See the [generator documentation](generator/README.md) for the model, canonical two-draw sampler and data scope. Development NLL is not an independent test result.
+For each training seed, this evaluates conditional/unconditional NLL on the packaged generator development split, then makes 20,000 attempts per sampling replicate from 50 fixed fit-derived MMP13 profiles at temperature 1.2. The defaults use two sampling replicates. Raw pools retain invalid attempts, duplicates and known sequences. See the [generator documentation](generator/README.md) for the model, canonical two-draw sampler and data scope.
 
 ```sh
 # Other supported generation settings:
@@ -99,7 +99,7 @@ MODE=unconditional TEMPERATURE=1.0 bash run.sh generator
 bash run.sh score-generated
 ```
 
-This scores unique novel canonical peptides with the three-seed PRISM predictor ensemble. It exports full-pool predicted MMP13 activity, target-minus-mean-competitor selectivity, and the number of new peptides with MMP13 Z > 1 and activity above every other enzyme. Top-24 and top-100 use the fixed `active_bottleneck` selector. These are PRISM self-scores, not measured cleavage outcomes or a replacement for external cross-scoring. See [evaluation details](docs/REPRODUCTION.md).
+This scores unique novel canonical peptides with the three-seed PRISM predictor ensemble. It exports full-pool predicted MMP13 activity, target-minus-mean-competitor selectivity, and the number of new peptides with MMP13 Z > 1 and activity above every other enzyme. Top-24 and top-100 use the fixed `active_bottleneck` selector. The reported scores are predictions from the released PRISM ensemble. See [evaluation details](docs/REPRODUCTION.md).
 
 ### Optional: train the generator
 
@@ -107,7 +107,7 @@ This scores unique novel canonical peptides with the three-seed PRISM predictor 
 bash run.sh train-generator
 ```
 
-This reproduces the fixed 1,000-update DPO continuation from the packaged G1 initialization and preference pairs. New checkpoints go to `outputs/generator/dpo/`; released weights under `generator/checkpoints/` are not modified. It does not rerun the preceding G1 model-development experiments. Predictor training from scratch is not a supported entry point in this release.
+This reproduces the fixed 1,000-update DPO continuation from the packaged generator initialization and preference pairs. New checkpoints go to `outputs/generator/dpo/`; released weights under `generator/checkpoints/` are not modified. Predictor reproduction uses the released weights; the training entry point covers generator DPO.
 
 ### Controls
 
@@ -136,8 +136,8 @@ Generator NLL, sampled peptides, sequence-quality metrics and PRISM-scored activ
 
 ```text
 assets/                 PRISM overview and predictor architecture
-checkpoints/            Predictor weights and earlier TensorFlow generator weights
-data/                  Labelled splits, sequence IDs and source metadata
+checkpoints/            Released predictor weights
+data/                   Labelled splits, sequence IDs and source metadata
 predictor/              Prediction, feature extraction and model definitions
 generator/              Current generator weights, initialization, data and runnable code
 evaluation/             Selection, generation-quality and scoring evaluation

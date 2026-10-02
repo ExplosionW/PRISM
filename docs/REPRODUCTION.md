@@ -18,15 +18,15 @@ For OOD, the selection budget is five per measured enzyme and the candidate pool
 
 ## Generator
 
-The default generator is **PRISM G1 + Pareto-DPO**, with three released fixed-final checkpoints. Its standalone model, exact trainable parameter scope, DPO continuation, inputs and sampling kernel are documented in [generator/README.md](../generator/README.md). The earlier TensorFlow G2 sources and weights are retained but are not the default `run.sh` implementation.
+The default generator is **PRISM with DPO**, with three released fixed-final checkpoints. Its standalone model, exact trainable parameter scope, DPO continuation, inputs and sampling kernel are documented in [generator/README.md](../generator/README.md).
 
-Current NLL uses the 1,434-peptide generator development split and target MMP13, including STOP. Joint NLL averages conditional and unconditional token NLL. The split was repeatedly used for development and must not be described as independent confirmation.
+Current NLL uses the 1,434-peptide generator development split and target MMP13, including STOP. Joint NLL averages conditional and unconditional token NLL.
 
-Generation retains every attempt. Normal STOP plus ten canonical amino acids defines legality; uniqueness is measured among legal sequences. Novelty uses the fixed public-sequence/preference-pair union in `generator/data/known_sequences.txt` (31,383 IDs). This differs from the older 17,767-ID benchmark-only exclusion. Any external baseline must use the same exclusion set before comparing new-peptide yield. K-mer entropy is a descriptive distribution statistic, not a quantity assumed to improve whenever it increases.
+Generation retains every attempt. Normal STOP plus ten canonical amino acids defines legality; uniqueness is measured among legal sequences. Novelty uses the fixed public-sequence/preference-pair union in `generator/data/known_sequences.txt` (31,383 IDs). Comparisons of new-peptide yield use this common exclusion set.
 
 ### Scorer identity and target endpoint
 
-`score-generated` averages the repository's three released PRISM predictors. It is a self-scoring utility; these outputs are not the historical official/native/ListNet cross-scores. The principal predicted joint event is MMP13 Z > 1 and MMP13 Z greater than the maximum of the other 17 scores. Count different legal novel hits over the full pool and divide by all attempts for yield per attempt. Target-minus-mean17 is a separate selectivity statistic.
+`score-generated` averages the repository's three released PRISM predictors. Outputs are predicted activity profiles from this ensemble. The principal predicted joint event is MMP13 Z > 1 and MMP13 Z greater than the maximum of the other 17 scores. Count different legal novel hits over the full pool and divide by all attempts for yield per attempt. Target-minus-mean17 is a separate selectivity statistic.
 
 Top-24/100 use `min(Z13 - 1, Z13 - max17)` in descending order, with sequence order breaking ties. Candidates are deduplicated before selection and never refilled. Selected rates are predicted outcomes, not measured precision. Replicates are averaged within training seed before means and sample SD across seeds; a single seed has no estimated training-seed SD.
 

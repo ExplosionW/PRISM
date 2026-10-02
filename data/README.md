@@ -42,4 +42,4 @@ OOD efficiencies and benchmark Z-scores have different units. OOD candidate rank
 
 ## Verification
 
-`bash run.sh verify` checks sequence identities, label parity between CSV and NPZ, canonical token encoding, target order and absence of exact sequence overlap between every pair of splits. Training and generation-template selection use only `benchmark/train.*`.
+`bash run.sh verify` checks sequence identities, label parity between CSV and NPZ, canonical token encoding, target order and absence of exact sequence overlap between every pair of splits. The predictor training split is `benchmark/train.*`. Generator fitting data and generation templates are described in [generator/data/README.md](../generator/data/README.md).

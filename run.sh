@@ -15,10 +15,6 @@ TEMPERATURE="${TEMPERATURE:-$DEFAULT_TEMP}"
 SAMPLING_SEEDS="${SAMPLING_SEEDS:-2026111201 2026111202}"
 PER_TEMPLATE="${PER_TEMPLATE:-400}"
 OUT="${OUTPUT_DIR:-$ROOT/outputs}"
-export TF_CPP_MIN_LOG_LEVEL="${TF_CPP_MIN_LOG_LEVEL:-2}"
-export TF_FORCE_GPU_ALLOW_GROWTH=true
-export TF_NUM_INTRAOP_THREADS="${TF_NUM_INTRAOP_THREADS:-4}"
-export TF_NUM_INTEROP_THREADS="${TF_NUM_INTEROP_THREADS:-2}"
 for seed in $SEEDS; do
   case "$seed" in 0|1|2) ;; *) echo 'SEEDS must contain only 0, 1 and 2.' >&2; exit 2;; esac
 done
@@ -32,7 +28,7 @@ Usage: bash run.sh COMMAND
   generator        Evaluate development NLL and generate PRISM Pareto-DPO pools.
   score-generated  Score generated pools using the three-seed PRISM predictor ensemble.
   all              Run verify, predictor, generator and score-generated.
-  train-generator  Reproduce fixed-1000-update DPO from the packaged G1 weights.
+  train-generator  Reproduce fixed-1000-update DPO from the packaged initialization weights.
 
 Environment variables:
   PYTORCH_PYTHON, GENERATOR_PYTHON, METRICS_PYTHON   Python executables
