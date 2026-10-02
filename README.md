@@ -2,148 +2,108 @@
 
 **Peptide Regression and Inverse design for Selective Metalloproteinase substrates**
 
-PRISM connects peptide activity prediction with conditional sequence generation for selective MMP substrate discovery, with a focus on MMP13. The predictor estimates an 18-enzyme activity profile from a peptide sequence. The separately trained generator proposes peptides conditioned on a desired profile and target identity. Profile regression, ListNet ranking and Pareto-Max selection support competition-aware candidate identification.
+PRISM predicts peptide activity across 18 MMPs and generates candidate substrates targeting MMP13. This repository provides the code, data and checkpoints for running PRISM.
 
 ![PRISM](assets/prism_overview.png)
 
-## Included
-
-- Three released PRISM predictor checkpoints and three PRISM generator checkpoints trained with DPO (seeds 0, 1 and 2), plus the initialization weights needed to reproduce DPO.
-- Labelled training, validation, benchmark test and OOD datasets, with sequence IDs and enzyme order.
-- The packaged prediction, generation and generator-training implementations, called through `run.sh`.
-- Evaluation scripts and small checkpoint-loading tests.
-
-This release focuses on PRISM. Predictor results are reproduced by running inference and evaluation with the released checkpoints.
-
-## Data
-
-| Dataset | Peptides | Measured enzymes | Location | Use |
-| --- | ---: | ---: | --- | --- |
-| Training | 13,666 | 18 | `data/benchmark/train.*` | Predictor model fitting |
-| Validation | 1,200 | 18 | `data/benchmark/val.*` | Model and selection settings |
-| Benchmark test | 2,901 | 18 | `data/benchmark/test.*` | Held-out evaluation |
-| OOD | 80 | 12 | `data/ood/ood.*` | Generalization evaluation using published experimental labels |
-
-The current generator uses its separate 10,954-peptide fit and 1,434-peptide development subsets, plus computational preference pairs; see [generator data](generator/data/README.md). The table above lists the predictor splits.
-
-All sequences are canonical 10-mers. These four sets have no exact sequence overlap. OOD peptides are separate from training, validation and benchmark test data; they are not used for model fitting. Predictions cover all 18 enzymes, including on OOD peptides.
-
-The benchmark comes from the Kukreja et al. dataset distributed with CleaveNet; OOD labels come from CleaveNet's published experimental measurements. See [data documentation](data/README.md) for filtering, label units, array layouts and source links.
-
 ## Installation
 
-The predictor and current generator both use PyTorch. Python 3.12 and Linux CUDA are recommended for reproducing training; CPU inference and small generation checks are also supported. Install both requirement sets in the same environment, or choose separate executables as below.
+Use Python 3.12. Run all commands from the repository root.
 
 ```sh
-python3.12 -m venv .venv-predictor
-.venv-predictor/bin/python -m pip install -r requirements/predictor.txt
-python3.12 -m venv .venv-generator
-.venv-generator/bin/python -m pip install -r requirements/generator.txt
-
-export PYTORCH_PYTHON="$PWD/.venv-predictor/bin/python"
-export GENERATOR_PYTHON="$PWD/.venv-generator/bin/python"
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements/predictor.txt -r requirements/generator.txt
 ```
-
-GPU runs require working CUDA support for the respective framework. For evaluating your saved predictions in a separate environment, install `requirements/metrics.txt` and set `METRICS_PYTHON` to that environment's Python.
 
 ## Run
 
-Run these commands from the repository root. Results are written to `outputs/` by default.
-
-### 1. Verify the release
+### Check the data and checkpoints
 
 ```sh
 bash run.sh verify
+DEVICE=cpu bash run.sh smoke
 ```
 
-`verify` checks sequence identities, label arrays and split separation.
+The smoke check loads all three predictor and generator checkpoints and generates 50 attempts per generator.
 
-### 2. Check all six model checkpoints
-
-```sh
-bash run.sh smoke
-```
-
-This compares all three predictors and generators against small reference-output fixtures, checks generator causality and frozen DPO parameters, and generates 50 attempts with each generator. It requires no encoder download.
-
-### 3. Predictor
+### Predict and evaluate
 
 ![PRISM predictor](assets/predictor_model.png)
 
-Run inference on validation, benchmark test and OOD data:
-
 ```sh
 DEVICE=cuda FEATURE_PRECISION=bf16 bash run.sh predictor
-# CPU alternative:
+# CPU:
 # DEVICE=cpu FEATURE_PRECISION=fp32 bash run.sh predictor
 ```
 
-This extracts frozen ESM-2 residue features, runs each PRISM checkpoint, selects candidates and calculates per-enzyme and aggregate results. ESM-2 650M is downloaded from Hugging Face on first use; the encoder revision is pinned in `predictor/extract_features.py`. Extracted features are reused from `outputs/features/`. The full feature cache is not included. Differences in device or numerical precision can slightly change predictions and rankings near ties.
+This evaluates validation, benchmark test and OOD sequences with seeds 0, 1 and 2. ESM-2 650M is downloaded on first use; extracted features are cached in `outputs/features/`.
 
-### 4. Evaluate and sample the generator
+### Generate and score peptides
 
 ```sh
-bash run.sh generator
+DEVICE=cuda bash run.sh generator
+DEVICE=cuda bash run.sh score-generated
 ```
 
-For each training seed, this evaluates conditional/unconditional NLL on the packaged generator development split, then makes 20,000 attempts per sampling replicate from 50 fixed fit-derived MMP13 profiles at temperature 1.2. The defaults use two sampling replicates. Raw pools retain invalid attempts, duplicates and known sequences. See the [generator documentation](generator/README.md) for the model, canonical two-draw sampler and data scope.
+Generation uses 50 packaged MMP13 profiles, 400 attempts per profile and two sampling repeats for each checkpoint. Scoring uses the three PRISM predictors and exports predicted activity profiles and selected candidates.
 
 ```sh
-# Other supported generation settings:
+# Unconditional generation:
 MODE=unconditional TEMPERATURE=1.0 bash run.sh generator
-```
-
-### 5. Score generated peptides with PRISM
-
-```sh
-bash run.sh score-generated
-```
-
-This scores unique novel canonical peptides with the three-seed PRISM predictor ensemble. It exports full-pool predicted MMP13 activity, target-minus-mean-competitor selectivity, and the number of new peptides with MMP13 Z > 1 and activity above every other enzyme. Top-24 and top-100 use the fixed `active_bottleneck` selector. The reported scores are predictions from the released PRISM ensemble. See [evaluation details](docs/REPRODUCTION.md).
-
-### Optional: train the generator
-
-```sh
-bash run.sh train-generator
-```
-
-This reproduces the fixed 1,000-update DPO continuation from the packaged generator initialization and preference pairs. New checkpoints go to `outputs/generator/dpo/`; released weights under `generator/checkpoints/` are not modified. Predictor reproduction uses the released weights; the training entry point covers generator DPO.
-
-### Controls
-
-```sh
+# A single checkpoint and a custom output directory:
 SEEDS="0" OUTPUT_DIR="$PWD/my_results" bash run.sh generator
-bash run.sh help
 ```
 
-Defaults are seeds `0 1 2`, temperature `1.2`, mode `selective`, and 400 attempts per template. `PYTORCH_PYTHON`, `GENERATOR_PYTHON` (defaults to `PYTORCH_PYTHON`) and `METRICS_PYTHON` select the Python executables. `SAMPLING_SEEDS` defaults to `2026111201 2026111202`. `FEATURE_DIR` reuses precomputed features; `POOL_DIR` selects pools for scoring.
+### Train the generator
 
-## Evaluation outputs
-
-`run.sh predictor` writes metrics to `outputs/predictor/metrics/`:
-
-- `by_target.csv`: precision and SR for each target and seed.
-- `by_seed.csv` and `summary.csv`: per-seed and aggregate results.
-- `selected_peptides.csv`: selected sequences and label-based outcomes.
-- `regression_by_target.csv`: activity-prediction metrics.
-- `thresholds.csv`: activity and selectivity thresholds.
-
-The `dataset` column identifies `benchmark` or `ood`. The `protocol` column describes Pareto-Max selection: `pareto_max_fixed_pool_size` uses the validation-selected candidate-pool size for the benchmark, and `pareto_max_full_pool` uses all available OOD candidates. The selection budgets are 100 and 5 peptides per enzyme, respectively.
-
-Generator NLL, sampled peptides, sequence-quality metrics and PRISM-scored activity profiles are written to `outputs/generator/`. These outputs are produced when you run the models and are excluded from version control. See [REPRODUCTION.md](docs/REPRODUCTION.md) for metric definitions.
-
-## Layout
-
-```text
-assets/                 PRISM overview and predictor architecture
-checkpoints/            Released predictor weights
-data/                   Labelled splits, sequence IDs and source metadata
-predictor/              Prediction, feature extraction and model definitions
-generator/              Current generator weights, initialization, data and runnable code
-evaluation/             Selection, generation-quality and scoring evaluation
-requirements/           Python dependencies
-tests/                  Small predictor input and reference-output fixture
-run.sh                  Unified entry point
+```sh
+DEVICE=cuda bash run.sh train-generator
 ```
 
-Generated outputs and local environments are excluded by `.gitignore`.
+Runs 1,000 DPO updates from the packaged initialization weights. New checkpoints are saved in `outputs/generator/dpo/`. See [generator commands](generator/README.md) for resuming training and running individual checkpoints.
+
+### Settings
+
+| Variable | Default | Use |
+| --- | --- | --- |
+| `DEVICE` | `cuda` | `cuda` or `cpu` |
+| `FEATURE_PRECISION` | `bf16` | Use `fp32` for CPU feature extraction |
+| `SEEDS` | `0 1 2` | Checkpoints to run |
+| `MODE` | `selective` | `selective` or `unconditional` |
+| `TEMPERATURE` | `1.2` / `1.0` | Conditional / unconditional sampling |
+| `PER_TEMPLATE` | `400` | Attempts per profile |
+| `SAMPLING_SEEDS` | `2026111201 2026111202` | Sampling repeats |
+| `OUTPUT_DIR` | `outputs/` | Output directory |
+| `FEATURE_DIR` | `$OUTPUT_DIR/features/` | Feature cache |
+| `POOL_DIR` | `$OUTPUT_DIR/generator/pools/` | Generated pools to score |
+
+`PYTORCH_PYTHON`, `GENERATOR_PYTHON` and `METRICS_PYTHON` can select separate Python executables. Run `bash run.sh help` for available commands.
+
+## Files
+
+| Location | Contents |
+| --- | --- |
+| `checkpoints/predictor/seed{0,1,2}.pt` | Predictor weights |
+| `generator/checkpoints/seed{0,1,2}.pt` | Generator weights |
+| `generator/initialization/seed{0,1,2}.pt` | Generator initialization for DPO |
+| `data/benchmark/` | Predictor training, validation and test data |
+| `data/ood/` | Labelled OOD evaluation data |
+| `generator/data/` | Generator fitting data, preferences and generation profiles |
+| `generator/configs/pareto_dpo.json` | Generator settings |
+| `predictor/`, `generator/`, `evaluation/` | Model and evaluation code |
+| `requirements/`, `tests/`, `assets/` | Dependencies, checkpoint checks and figures |
+
+Data sizes and formats are listed in [data/README.md](data/README.md) and [generator/data/README.md](generator/data/README.md). Benchmark data originate from Kukreja et al. via the CleaveNet release; OOD labels are published CleaveNet experimental measurements.
+
+### Outputs
+
+| Location under `OUTPUT_DIR` | Contents |
+| --- | --- |
+| `predictor/predictions/` | NPZ files containing sequences, enzyme order and predictions |
+| `predictor/metrics/` | Aggregate/per-target metrics, selected peptides and thresholds |
+| `generator/nll/` | Generator development loss |
+| `generator/pools/` | Raw generated sequences |
+| `generator/quality/` | Sequence-quality summaries |
+| `generator/prism_scores/` | Predicted activity profiles, scores and selected peptides |
+| `generator/dpo/` | New generator training checkpoints |

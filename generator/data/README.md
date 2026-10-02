@@ -1,13 +1,15 @@
-# Generator data
+# Generator inputs
 
-These inputs belong to the released PRISM with DPO generator. They do not change the predictor's existing benchmark files.
+| File | Contents |
+| --- | --- |
+| `fit.npz` | 10,954 fitting peptides with sequences, tokens, measured labels and rounded conditions |
+| `development.npz` | 1,434 peptides for development loss evaluation |
+| `preferences.csv` | 6,400 pairs: 5,101 training and 1,299 validation |
+| `requests.json` | Requested 18-enzyme profiles, keyed by `fit_condition_index` |
+| `templates.json` | 50 generation profiles and their fitting sequences, in sampling order |
+| `known_sequences.txt` | 31,383 sequences excluded when counting novel outputs |
+| `target_order.json` | Enzyme order; MMP13 has zero-based index 4 |
 
-- `fit.npz`: 10,954 measured peptides, with `tokens`, `labels`, rounded `conditions`, `sequences`, and indices into the earlier training split.
-- `development.npz`: 1,434 measured peptides for development NLL. It is used to evaluate the generator during development.
-- `preferences.csv`: 6,400 computational same-request preference pairs (5,101 train, 1,299 validation). `delta_activity`, `delta_mean17` and `delta_max17` are differences in frozen PRISM predictions, not measured labels. The two pair splits contain disjoint peptide sequences.
-- `requests.json`: original rounded 18-enzyme fit request for each `fit_condition_index` in the preference table.
-- `templates.json`: 50 fixed generation profiles and their source fit sequences. The order is part of the sampling procedure.
-- `known_sequences.txt`: 31,383 sequence IDs excluded from generated-pool novelty, including the public 18,583 CleaveNet sequences and all 12,800 preference-pair peptides.
-- `target_order.json`: output/condition order, with MMP13 at zero-based index 4.
+Profiles use the source Z-score scale, with conditions rounded to 0.1. Token order is `ACDEFGHIKLMNPQRSTVWY` (0–19); START = 20 and STOP = 21.
 
-Measured profiles use the source dataset's Z-score scale. The generator alphabet is `ACDEFGHIKLMNPQRSTVWY`, START = 20 and STOP = 21. The original dataset attribution is in [the repository data documentation](../../data/README.md). Public test/validation sequence IDs are used only for novelty exclusion; this directory adds no corresponding held-out measured labels.
+Preference columns `delta_activity`, `delta_mean17` and `delta_max17` contain differences in PRISM predictions. The novelty exclusion file contains public dataset sequences and both members of the preference pairs. Measured-data sources are documented in [data/README.md](../../data/README.md).
