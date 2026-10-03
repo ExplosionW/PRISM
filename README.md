@@ -2,7 +2,13 @@
 
 **Peptide Regression and Inverse design for Selective Metalloproteinase substrates**
 
-PRISM predicts peptide activity across 18 MMPs and generates candidate substrates targeting MMP13.
+PRISM is a deep learning framework for predicting peptide cleavage activity and designing substrates for matrix metalloproteinases (MMPs). It brings activity prediction and sequence generation into a single workflow, with a focus on identifying peptides that combine high predicted MMP13 activity with selectivity over the other 17 MMPs.
+
+The **PRISM predictor** combines peptide language-model features with enzyme-conditioned modeling to estimate an 18-enzyme activity profile for each sequence. These profiles support candidate screening based on both target activity and competing enzyme activity.
+
+The **PRISM generator** designs peptide sequences conditioned on requested activity profiles. It combines profile and competition experts with Pareto-DPO, using predictor-derived preferences to favor MMP13 activity and selectivity. Generated candidates can then be scored and ranked for experimental follow-up.
+
+This repository provides pretrained predictor and generator weights, their training pipelines, and tools for peptide generation, prediction and evaluation.
 
 ![PRISM](assets/prism_overview.png)
 
