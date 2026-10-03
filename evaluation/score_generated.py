@@ -18,7 +18,7 @@ def main():
         z=np.load(feat);assert z['sequences'].tolist()==seq
         all_pred=[]
         for seed in range(3):
-            net,targets=load(R/f'checkpoints/predictor/seed{seed}.pt',a.device);all_pred.append(predict(net,seq,z['esm33'],a.device));del net
+            net,targets=load(R/f'predictor/checkpoints/seed{seed}.pt',a.device);all_pred.append(predict(net,seq,z['esm33'],a.device));del net
         mean=np.stack(all_pred).mean(0);t=targets.index('MMP13');activity=mean[:,t];off=np.delete(mean,t,axis=1);selectivity=activity-off.mean(1);margin=activity-off.max(1);joint=(activity>1)&(margin>0);top=_selection.select(seq,mean,100,t);top24=top[:24]
         np.savez_compressed(work/'predictions.npz',sequences=seq,targets=targets,predictions=np.stack(all_pred),mean=mean)
         match=re.search(r'_seed(\d+)_sample(\d+)_T([\d.]+)_(\w+)$',file.stem)
