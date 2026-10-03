@@ -1,4 +1,4 @@
-"""Reproduce PRISM selection with the existing Pareto-Max implementation."""
+"""Evaluate PRISM predictions with Pareto-Max selection."""
 from pathlib import Path
 import argparse,json,sys
 import numpy as np

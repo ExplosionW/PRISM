@@ -1,4 +1,4 @@
-"""Offline loading, causal-output and selection checks for the release."""
+"""Check generator loading, causality and candidate selection."""
 from pathlib import Path
 import sys
 

@@ -1,4 +1,4 @@
-"""Sequence validity, novelty and motif diversity for the current released generator."""
+"""Evaluate generated sequence validity, novelty and motif diversity."""
 from pathlib import Path
 import argparse,collections,re
 import numpy as np,pandas as pd
