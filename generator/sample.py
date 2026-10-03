@@ -1,4 +1,4 @@
-"""Sample the released PRISM Pareto-DPO generator without filtering/refilling."""
+"""Generate peptide sequences with PRISM."""
 import argparse
 import csv
 import json

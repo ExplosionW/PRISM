@@ -176,7 +176,7 @@ def frozen_parameters(net):
 
 
 def fit_stage(net, stage, seed, fit, development, out, spec, resume=False, after_epoch=None):
-    """Run a fixed stage; the callback supports interruption tests, not a CLI sweep."""
+    """Train one stage with checkpointing and resume support."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     best_path, resume_path = out / 'best.pt', out / 'resume.pt'

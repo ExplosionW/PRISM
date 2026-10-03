@@ -1,8 +1,4 @@
-"""Reproduce fixed-1000-update Pareto-DPO from a supervised PRISM generator checkpoint.
-
-Preferences are computational PRISM predictions, not experimental measurements.
-Only the original DPO parameter subset is updated. No best-epoch selection.
-"""
+"""Train Pareto-DPO from a supervised PRISM generator checkpoint."""
 import argparse
 import json
 from pathlib import Path

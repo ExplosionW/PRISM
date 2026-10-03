@@ -1,4 +1,4 @@
-"""Train the complete fixed PRISM generator pipeline, from random initialization to DPO."""
+"""Train the PRISM generator from random initialization through Pareto-DPO."""
 import argparse
 import json
 import shutil

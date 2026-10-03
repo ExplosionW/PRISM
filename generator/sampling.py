@@ -1,4 +1,4 @@
-"""Released canonical two-draw sampler; all attempts retained, never refilled."""
+"""Canonical two-draw peptide sampling."""
 import torch
 
 

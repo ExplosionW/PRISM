@@ -1,4 +1,4 @@
-"""Teacher-forced NLL on the packaged, repeatedly used development split."""
+"""Evaluate generator NLL on the development split."""
 import argparse
 import json
 from pathlib import Path

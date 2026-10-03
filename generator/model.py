@@ -1,7 +1,4 @@
-"""PRISM equal-weight profile/competition experts, with released DPO weights.
-
-State-dict names and arithmetic order match the trained models.
-"""
+"""PRISM generator with profile and competition experts."""
 import math
 from pathlib import Path
 
@@ -179,7 +176,7 @@ class MixtureGenerator(nn.Module):
 
 
 def load(path, device='cpu'):
-    """Load trusted PRISM release checkpoints. Historical path metadata is unused."""
+    """Load a trusted PRISM generator checkpoint."""
     checkpoint = torch.load(Path(path), map_location='cpu', weights_only=False)
     model = MixtureGenerator(checkpoint['mixture_mode'])
     model.load_state_dict(checkpoint['model'], strict=True)
@@ -187,7 +184,7 @@ def load(path, device='cpu'):
 
 
 def configure_dpo(model):
-    """Match the released DPO update scope exactly, including student.base freeze."""
+    """Freeze decoder backbones and router for DPO."""
     for name, param in model.named_parameters():
         param.requires_grad_('.base.' not in name and not name.startswith('router.'))
     return model.eval()
