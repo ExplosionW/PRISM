@@ -6,7 +6,28 @@ PRISM predicts peptide activity across 18 MMPs and generates candidate substrate
 
 ![PRISM](assets/prism_overview.png)
 
-## Installation
+## Table of contents
+
+- [Getting started](#getting-started)
+  - [Installation](#installation)
+  - [Project structure](#project-structure)
+  - [Check the installation](#check-the-installation)
+- [Training models](#training-models)
+  - [PRISM predictor](#prism-predictor)
+  - [PRISM generator full training pipeline](#prism-generator-full-training-pipeline)
+- [Predicting peptide activity](#predicting-peptide-activity)
+- [Generating peptides](#generating-peptides)
+  - [Generate and score](#generate-and-score)
+  - [Single-checkpoint generation and evaluation](#single-checkpoint-generation-and-evaluation)
+- [Run settings](#run-settings)
+- [Data](#data)
+  - [Predictor data](#predictor-data)
+  - [Generator data](#generator-data)
+- [Outputs](#outputs)
+
+## Getting started
+
+### Installation
 
 Use Python 3.12. Run all commands from the repository root.
 
@@ -16,9 +37,30 @@ source .venv/bin/activate
 python -m pip install -r requirements/predictor.txt -r requirements/generator.txt
 ```
 
-## Run
+### Project structure
 
-### Check the data and checkpoints
+```text
+PRISM/
+├── predictor/                 # Activity prediction and training
+│   ├── checkpoints/           # Released predictor weights (seeds 0, 1, 2)
+│   ├── initialization/        # Original task-LM weights and fixed enzyme inputs
+│   └── configs/               # Fixed predictor training settings
+├── generator/                 # Peptide generation and full training pipeline
+│   ├── checkpoints/           # Released generator weights (seeds 0, 1, 2)
+│   ├── initialization/        # Supervised weights for the DPO-only shortcut
+│   ├── configs/               # Generation and fixed training settings
+│   └── data/                  # Fitting data, preference pairs and requested profiles
+├── data/                      # Predictor training, validation, test and OOD data
+├── evaluation/                # Prediction and generation evaluation scripts
+├── requirements/              # Python dependencies
+├── tests/                     # Reference outputs and model/training checks
+├── assets/                    # Images used in this README
+├── README.md                  # Installation, commands and data formats
+├── run.sh                     # Training, prediction, generation and evaluation entry point
+└── .gitignore                 # Exclude caches, outputs and extra checkpoint files
+```
+
+### Check the installation
 
 ```sh
 bash run.sh verify
@@ -27,31 +69,9 @@ DEVICE=cpu bash run.sh smoke
 
 The smoke check loads all three predictor and generator checkpoints and generates 50 attempts per generator.
 
-### Predict and evaluate
+## Training models
 
-![PRISM predictor](assets/predictor_model.png)
-
-```sh
-DEVICE=cuda FEATURE_PRECISION=bf16 bash run.sh predictor
-# CPU:
-# DEVICE=cpu FEATURE_PRECISION=fp32 bash run.sh predictor
-```
-
-This evaluates validation, benchmark test and OOD sequences with seeds 0, 1 and 2. ESM-2 650M is downloaded on first use; extracted features are cached in `outputs/features/`.
-
-The released predictor checkpoints are the original `prop7_listnet_batch / shared_query` models with three-seed mean benchmark Precision **7.0926%** under Count/Pareto-Max (Top100 per target, averaged over 18 targets). This is not MMP13-only precision. Checkpoint hashes are in `predictor/configs/prism.json`.
-
-For custom ten-residue sequences, provide a CSV with a `sequence` column:
-
-```sh
-python predictor/extract_features.py --input peptides.csv --output features.npz --device cuda --precision bf16
-python predictor/predict.py --checkpoint predictor/checkpoints/seed0.pt \
-  --input features.npz --output predictions.npz --device cuda
-```
-
-The feature archive contains `sequences` and residue-level `esm33` features of shape N × 10 × 1280. Predictions contain `sequences`, `targets` and `predictions` of shape N × 18.
-
-### Train the predictor
+### PRISM predictor
 
 ```sh
 # All three seeds, original fixed recipe:
@@ -83,7 +103,81 @@ python predictor/train.py --seed 0 --device cuda --features outputs/features \
 
 Training follows the archived 7.09% recipe. Exact historical weights, early-stopping epochs and the reported score are not guaranteed by retraining. CUDA FP32 task training with historical BF16 ESM feature extraction is the reference setup; CPU/FP32 feature extraction is supported but changes the numerical setting. Recomputed features need not be byte-identical to the historical cache.
 
-### Generate and score peptides
+### PRISM generator full training pipeline
+
+```sh
+# Complete pipeline, all three seeds:
+DEVICE=cuda bash run.sh train-generator
+# One seed, or resume interrupted training:
+SEEDS="0" DEVICE=cuda bash run.sh train-generator
+SEEDS="0" RESUME=1 DEVICE=cuda bash run.sh train-generator
+```
+
+The fixed PRISM generator pipeline trains the base decoder from random initialization, builds two conditional experts, then performs supervised mixture training and Pareto-DPO:
+
+| Stage | Training | Initialization |
+| --- | --- | --- |
+| Base decoder | 150 epochs; Transformer schedule with 4,000 warmup updates | Random initialization |
+| Base refinement | 60 epochs; learning rate 5 × 10⁻⁵ | Selected base decoder |
+| Profile expert | 300 epochs; profile-conditioned memory | Selected refined decoder |
+| Competition expert | 300 epochs; profile and target-minus-competitor memory | The same selected refined decoder |
+| Supervised mixture | 60 epochs; equal-weight experts with relative-position bias and channel modulation | Selected profile and competition experts; new modulation outputs initialized to zero |
+| Pareto-DPO | 1,000 updates; learning rate 10⁻⁶ | Selected supervised mixture |
+
+Supervised stages use Adam (epsilon 10⁻⁷), batch size 128, and a 50/50 mixture of conditional and unconditional examples. Each stage selects one checkpoint by minimum joint development NLL, including epoch zero; the fixed final epoch is also saved. The two experts retain the frozen unconditional decoder. Their 300-epoch schedules preserve optimizer state across the original 100 + 200 epoch boundary.
+
+Supervised mixture training minimizes the mean of the two expert cross-entropies. Conditional fitting examples with measured MMP13 Z-score > 1 and higher than all other 17 enzymes receive weight 2; other examples receive weight 1. The loss is normalized by the expected mean weight. Pareto-DPO then updates the original fixed parameter subset using the packaged preference pairs, with no best-epoch selection. These preferences are frozen PRISM predictions, not experimental measurements; the command does not regenerate them.
+
+```sh
+# Equivalent single-seed entry point:
+python generator/train_pipeline.py --seed 0 --device cuda \
+  --output outputs/generator/training/seed0
+```
+
+The final model is saved as `outputs/generator/training/seed0/final.pt`. Per-stage best, last and resume checkpoints are retained. Published weights are not overwritten. To generate from a new model, pass its `final.pt` to `generator/sample.py`; the `run.sh generator` command uses the released checkpoints.
+
+Supervised training and checkpoint selection use the packaged fitting and development splits; DPO uses the packaged training preference pairs. The architecture and schedule follow the released recipe; retraining does not guarantee identical historical weights or scores. Settings are in `generator/configs/training.json` and `generator/configs/pareto_dpo.json`.
+
+#### DPO-only training
+
+To start directly from the packaged supervised initialization instead of rebuilding the preceding stages:
+
+```sh
+DEVICE=cuda bash run.sh train-generator-dpo
+SEEDS="0" RESUME=1 DEVICE=cuda bash run.sh train-generator-dpo
+# Direct entry point:
+python generator/train.py --seed 0 --device cuda --output outputs/generator/dpo/seed0
+```
+
+This writes `outputs/generator/dpo/seed{0,1,2}/last.pt`. The complete pipeline above passes its newly trained supervised checkpoint to this same DPO implementation.
+
+## Predicting peptide activity
+
+![PRISM predictor](assets/predictor_model.png)
+
+```sh
+DEVICE=cuda FEATURE_PRECISION=bf16 bash run.sh predictor
+# CPU:
+# DEVICE=cpu FEATURE_PRECISION=fp32 bash run.sh predictor
+```
+
+This evaluates validation, benchmark test and OOD sequences with seeds 0, 1 and 2. ESM-2 650M is downloaded on first use; extracted features are cached in `outputs/features/`.
+
+The released predictor checkpoints are the original `prop7_listnet_batch / shared_query` models with three-seed mean benchmark Precision **7.0926%** under Count/Pareto-Max (Top100 per target, averaged over 18 targets). This is not MMP13-only precision. Checkpoint hashes are in `predictor/configs/prism.json`.
+
+For custom ten-residue sequences, provide a CSV with a `sequence` column:
+
+```sh
+python predictor/extract_features.py --input peptides.csv --output features.npz --device cuda --precision bf16
+python predictor/predict.py --checkpoint predictor/checkpoints/seed0.pt \
+  --input features.npz --output predictions.npz --device cuda
+```
+
+The feature archive contains `sequences` and residue-level `esm33` features of shape N × 10 × 1280. Predictions contain `sequences`, `targets` and `predictions` of shape N × 18.
+
+## Generating peptides
+
+### Generate and score
 
 ```sh
 DEVICE=cuda bash run.sh generator
@@ -97,22 +191,6 @@ Generation uses 50 packaged MMP13 profiles, 400 attempts per profile and two sam
 MODE=unconditional TEMPERATURE=1.0 bash run.sh generator
 # A single checkpoint and a custom output directory:
 SEEDS="0" OUTPUT_DIR="$PWD/my_results" bash run.sh generator
-```
-
-### Train the generator
-
-```sh
-DEVICE=cuda bash run.sh train-generator
-```
-
-Runs 1,000 DPO updates from the packaged G1 initialization weights; it does not rebuild G1 from scratch. Only the original DPO parameter subset is updated, with no best-epoch selection. Preferences come from frozen PRISM predictions, not wet-lab measurements. New checkpoints go to `outputs/generator/dpo/seed{0,1,2}/last.pt`.
-
-```sh
-SEEDS="0" DEVICE=cuda bash run.sh train-generator
-SEEDS="0" RESUME=1 DEVICE=cuda bash run.sh train-generator
-# Direct single-seed entry point:
-python generator/train.py --seed 0 --device cuda --output outputs/generator/dpo/seed0
-python generator/train.py --seed 0 --device cuda --output outputs/generator/dpo/seed0 --resume
 ```
 
 ### Single-checkpoint generation and evaluation
@@ -129,7 +207,7 @@ Sampling options include `--mode selective|unconditional`, `--temperature`, `--s
 
 Output CSVs retain every attempt. `sequence` contains the generated string; `stopped_normally`, `raw_length` and `filter_reason` record its status. `condition_train_index` identifies the fitting sequence supplying the requested profile, or is -1 for unconditional generation. Scoring exports activity profiles and active-bottleneck Top24/100 candidates; predicted qualification is not experimental cleavage validation.
 
-### Settings
+## Run settings
 
 | Variable | Default | Use |
 | --- | --- | --- |
@@ -148,28 +226,7 @@ Output CSVs retain every attempt. `sequence` contains the generated string; `sto
 
 `PYTORCH_PYTHON`, `GENERATOR_PYTHON` and `METRICS_PYTHON` can select separate Python executables. Run `bash run.sh help` for available commands.
 
-## Project structure
-
-```text
-PRISM/
-├── predictor/                 # Activity prediction and training
-│   ├── checkpoints/           # Released predictor weights (seeds 0, 1, 2)
-│   ├── initialization/        # Original task-LM weights and fixed enzyme inputs
-│   └── configs/               # Fixed predictor training settings
-├── generator/                 # Peptide generation and DPO training
-│   ├── checkpoints/           # Released generator weights (seeds 0, 1, 2)
-│   ├── initialization/        # G1 weights used to initialize DPO
-│   ├── configs/               # Generation and DPO settings
-│   └── data/                  # Fitting data, preference pairs and requested profiles
-├── data/                      # Predictor training, validation, test and OOD data
-├── evaluation/                # Prediction and generation evaluation scripts
-├── requirements/              # Python dependencies
-├── tests/                     # Reference outputs and model/training checks
-├── assets/                    # Images used in this README
-├── README.md                  # Installation, commands and data formats
-├── run.sh                     # Training, prediction, generation and evaluation entry point
-└── .gitignore                 # Exclude caches, outputs and extra checkpoint files
-```
+## Data
 
 ### Predictor data
 
@@ -200,7 +257,7 @@ Enzyme orders are in `data/benchmark/target_order.json` and `data/ood/target_ord
 
 Profiles use the source Z-score scale, with conditions rounded to 0.1. Token order is `ACDEFGHIKLMNPQRSTVWY` (0–19); generator START = 20 and STOP = 21. Preference columns `delta_activity`, `delta_mean17` and `delta_max17` contain differences in PRISM predictions. The novelty exclusion file contains public dataset sequences and both members of the preference pairs.
 
-### Outputs
+## Outputs
 
 | Location under `OUTPUT_DIR` | Contents |
 | --- | --- |
@@ -211,4 +268,5 @@ Profiles use the source Z-score scale, with conditions rounded to 0.1. Token ord
 | `generator/pools/` | Raw generated sequences |
 | `generator/quality/` | Sequence-quality summaries |
 | `generator/prism_scores/` | Predicted activity profiles, scores and selected peptides |
-| `generator/dpo/` | New generator training checkpoints |
+| `generator/training/seed*/` | Complete generator training: stage checkpoints, histories and final model |
+| `generator/dpo/seed*/` | Checkpoints from the DPO-only shortcut |
