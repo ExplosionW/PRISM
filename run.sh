@@ -30,9 +30,9 @@ Usage: bash run.sh COMMAND
   generator        Evaluate development NLL and generate PRISM Pareto-DPO pools.
   score-generated  Score generated pools using the three-seed PRISM predictor ensemble.
   all              Run verify, predictor, generator and score-generated.
-  train-predictor  Train the original three-stage PRISM predictor recipe (seeds 0/1/2).
-  train-generator  Train the complete PRISM generator pipeline, from initialization to DPO.
-  train-generator-dpo  Run only DPO from the packaged supervised initialization.
+  train-predictor  Train the PRISM predictor.
+  train-generator  Train the complete PRISM generator pipeline.
+  train-generator-dpo  Train DPO from the included supervised weights.
 
 Environment variables:
   PYTORCH_PYTHON, GENERATOR_PYTHON, METRICS_PYTHON   Python executables
@@ -44,7 +44,7 @@ Environment variables:
   POOL_DIR=./outputs/generator/pools               Input pools for score-generated
   RESUME=0                                       Set 1 to resume training
   PREDICTOR_LM_INIT=./predictor/initialization/lmw_256_8_iso.pt
-                                                 Original task-LM initialization (SHA checked)
+                                                 Task-LM initialization
 
 CPU feature extraction: DEVICE=cpu FEATURE_PRECISION=fp32 bash run.sh predictor
 EOF
