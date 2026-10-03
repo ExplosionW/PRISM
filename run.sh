@@ -31,7 +31,8 @@ Usage: bash run.sh COMMAND
   score-generated  Score generated pools using the three-seed PRISM predictor ensemble.
   all              Run verify, predictor, generator and score-generated.
   train-predictor  Train the original three-stage PRISM predictor recipe (seeds 0/1/2).
-  train-generator  Reproduce fixed-1000-update DPO from the packaged initialization weights.
+  train-generator  Train the complete PRISM generator pipeline, from initialization to DPO.
+  train-generator-dpo  Run only DPO from the packaged supervised initialization.
 
 Environment variables:
   PYTORCH_PYTHON, GENERATOR_PYTHON, METRICS_PYTHON   Python executables
@@ -41,7 +42,7 @@ Environment variables:
   SAMPLING_SEEDS="2026111201 2026111202"            Separate sampling replicates
   FEATURE_DIR=./outputs/features                   Reuse extracted ESM features
   POOL_DIR=./outputs/generator/pools               Input pools for score-generated
-  RESUME=0                                       Set 1 to resume either training command
+  RESUME=0                                       Set 1 to resume training
   PREDICTOR_LM_INIT=./predictor/initialization/lmw_256_8_iso.pt
                                                  Original task-LM initialization (SHA checked)
 
@@ -108,11 +109,19 @@ train_generator() {
   local extra=()
   [[ "$RESUME" != 1 ]] || extra+=(--resume)
   for seed in $SEEDS; do
+    "$GENERATOR_PYTHON" generator/train_pipeline.py --seed "$seed" --device "$DEVICE" --output "$OUT/generator/training/seed${seed}" ${extra[@]+"${extra[@]}"}
+  done
+}
+train_generator_dpo() {
+  local extra=()
+  [[ "$RESUME" != 1 ]] || extra+=(--resume)
+  for seed in $SEEDS; do
     "$GENERATOR_PYTHON" generator/train.py --seed "$seed" --device "$DEVICE" --output "$OUT/generator/dpo/seed${seed}" ${extra[@]+"${extra[@]}"}
   done
 }
 case "$1" in
   verify) verify;; smoke) smoke;; predictor) predictor;; generator) generator;;
   score-generated) score_generated;; all) verify; predictor; generator; score_generated;;
-  train-predictor) train_predictor;; train-generator) train_generator;; *) help; exit 2;;
+  train-predictor) train_predictor;; train-generator) train_generator;;
+  train-generator-dpo) train_generator_dpo;; *) help; exit 2;;
 esac
