@@ -45,7 +45,7 @@ For custom ten-residue sequences, provide a CSV with a `sequence` column:
 
 ```sh
 python predictor/extract_features.py --input peptides.csv --output features.npz --device cuda --precision bf16
-python predictor/predict.py --checkpoint checkpoints/predictor/seed0.pt \
+python predictor/predict.py --checkpoint predictor/checkpoints/seed0.pt \
   --input features.npz --output predictions.npz --device cuda
 ```
 
@@ -148,22 +148,28 @@ Output CSVs retain every attempt. `sequence` contains the generated string; `sto
 
 `PYTORCH_PYTHON`, `GENERATOR_PYTHON` and `METRICS_PYTHON` can select separate Python executables. Run `bash run.sh help` for available commands.
 
-## Files
+## Project structure
 
-| Location | Contents |
-| --- | --- |
-| `checkpoints/predictor/seed{0,1,2}.pt` | Predictor weights |
-| `predictor/train.py`, `predictor/losses.py` | Fixed three-stage predictor training |
-| `predictor/configs/prism.json` | Predictor model, training and initialization settings |
-| `predictor/initialization/` | Original task-LM initialization and fixed enzyme inputs |
-| `generator/checkpoints/seed{0,1,2}.pt` | Generator weights |
-| `generator/initialization/seed{0,1,2}.pt` | Generator initialization for DPO |
-| `data/benchmark/` | Predictor training, validation and test data |
-| `data/ood/` | Labelled OOD evaluation data |
-| `generator/data/` | Generator fitting data, preferences and generation profiles |
-| `generator/configs/pareto_dpo.json` | Generator settings |
-| `predictor/`, `generator/`, `evaluation/` | Model and evaluation code |
-| `requirements/`, `tests/`, `assets/` | Dependencies, checkpoint checks and figures |
+```text
+PRISM/
+├── predictor/                 # Activity prediction and training
+│   ├── checkpoints/           # Released predictor weights (seeds 0, 1, 2)
+│   ├── initialization/        # Original task-LM weights and fixed enzyme inputs
+│   └── configs/               # Fixed predictor training settings
+├── generator/                 # Peptide generation and DPO training
+│   ├── checkpoints/           # Released generator weights (seeds 0, 1, 2)
+│   ├── initialization/        # G1 weights used to initialize DPO
+│   ├── configs/               # Generation and DPO settings
+│   └── data/                  # Fitting data, preference pairs and requested profiles
+├── data/                      # Predictor training, validation, test and OOD data
+├── evaluation/                # Prediction and generation evaluation scripts
+├── requirements/              # Python dependencies
+├── tests/                     # Reference outputs and model/training checks
+├── assets/                    # Images used in this README
+├── README.md                  # Installation, commands and data formats
+├── run.sh                     # Training, prediction, generation and evaluation entry point
+└── .gitignore                 # Exclude caches, outputs and extra checkpoint files
+```
 
 ### Predictor data
 
