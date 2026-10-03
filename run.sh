@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Thin entry point for the packaged PRISM inference, generation and evaluation code.
+# Entry point for PRISM prediction, generation, evaluation and fixed-recipe training.
 set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
@@ -14,6 +14,8 @@ if [[ "$MODE" == unconditional ]]; then DEFAULT_TEMP=1.0; else DEFAULT_TEMP=1.2;
 TEMPERATURE="${TEMPERATURE:-$DEFAULT_TEMP}"
 SAMPLING_SEEDS="${SAMPLING_SEEDS:-2026111201 2026111202}"
 PER_TEMPLATE="${PER_TEMPLATE:-400}"
+RESUME="${RESUME:-0}"
+PREDICTOR_LM_INIT="${PREDICTOR_LM_INIT:-$ROOT/predictor/initialization/lmw_256_8_iso.pt}"
 OUT="${OUTPUT_DIR:-$ROOT/outputs}"
 for seed in $SEEDS; do
   case "$seed" in 0|1|2) ;; *) echo 'SEEDS must contain only 0, 1 and 2.' >&2; exit 2;; esac
@@ -28,6 +30,7 @@ Usage: bash run.sh COMMAND
   generator        Evaluate development NLL and generate PRISM Pareto-DPO pools.
   score-generated  Score generated pools using the three-seed PRISM predictor ensemble.
   all              Run verify, predictor, generator and score-generated.
+  train-predictor  Train the original three-stage PRISM predictor recipe (seeds 0/1/2).
   train-generator  Reproduce fixed-1000-update DPO from the packaged initialization weights.
 
 Environment variables:
@@ -38,6 +41,9 @@ Environment variables:
   SAMPLING_SEEDS="2026111201 2026111202"            Separate sampling replicates
   FEATURE_DIR=./outputs/features                   Reuse extracted ESM features
   POOL_DIR=./outputs/generator/pools               Input pools for score-generated
+  RESUME=0                                       Set 1 to resume either training command
+  PREDICTOR_LM_INIT=./predictor/initialization/lmw_256_8_iso.pt
+                                                 Original task-LM initialization (SHA checked)
 
 CPU feature extraction: DEVICE=cpu FEATURE_PRECISION=fp32 bash run.sh predictor
 EOF
@@ -84,13 +90,29 @@ generator() {
 score_generated() {
   "$PYTORCH_PYTHON" evaluation/score_generated.py --pools "${POOL_DIR:-$OUT/generator/pools}" --output "$OUT/generator/prism_scores" --device "$DEVICE" --precision "$FEATURE_PRECISION"
 }
-train_generator() {
+train_predictor() {
+  "$PYTORCH_PYTHON" predictor/train.py --lm-init "$PREDICTOR_LM_INIT" --check-inputs
+  mkdir -p "$FEATURE_DIR"
+  for split in train val; do
+    if [[ ! -f "$FEATURE_DIR/$split.npz" ]]; then
+      "$PYTORCH_PYTHON" predictor/extract_features.py --input "data/benchmark/$split.csv" --output "$FEATURE_DIR/$split.npz" --device "$DEVICE" --precision "$FEATURE_PRECISION"
+    fi
+  done
+  local extra=()
+  [[ "$RESUME" != 1 ]] || extra+=(--resume)
   for seed in $SEEDS; do
-    "$GENERATOR_PYTHON" generator/train.py --seed "$seed" --device "$DEVICE" --output "$OUT/generator/dpo/seed${seed}"
+    "$PYTORCH_PYTHON" predictor/train.py --seed "$seed" --device "$DEVICE" --features "$FEATURE_DIR" --lm-init "$PREDICTOR_LM_INIT" --output "$OUT/predictor/training/seed${seed}" ${extra[@]+"${extra[@]}"}
+  done
+}
+train_generator() {
+  local extra=()
+  [[ "$RESUME" != 1 ]] || extra+=(--resume)
+  for seed in $SEEDS; do
+    "$GENERATOR_PYTHON" generator/train.py --seed "$seed" --device "$DEVICE" --output "$OUT/generator/dpo/seed${seed}" ${extra[@]+"${extra[@]}"}
   done
 }
 case "$1" in
   verify) verify;; smoke) smoke;; predictor) predictor;; generator) generator;;
   score-generated) score_generated;; all) verify; predictor; generator; score_generated;;
-  train-generator) train_generator;; *) help; exit 2;;
+  train-predictor) train_predictor;; train-generator) train_generator;; *) help; exit 2;;
 esac

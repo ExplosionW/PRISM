@@ -1,0 +1,27 @@
+{
+  "model": {
+    "dim": 96,
+    "pair_dim": 32,
+    "hid": 384,
+    "dropout": 0.15,
+    "de": 32,
+    "zdim": 64,
+    "kappa": 10.0
+  },
+  "max_epochs_per_stage": 300,
+  "patience": 25,
+  "effective_batch": 128,
+  "validation": "mean MSE + 36 centered MSE + 2 maximum-competitor margin MSE",
+  "training": "validation objective + 0.5 minibatch ListNet",
+  "task_lm_sha256": "bdb903e3f7b2aa28546aacfa0471500aa47f1844940fd0faae3e427354111f92",
+  "fixed_inputs": "predictor/initialization/fixed_inputs.npz",
+  "fixed_inputs_sha256": "98e6881b7e06e7c878d5b50125c581fcdaccec2104c8a2d1e7e6c0d1fdfd5a62",
+  "esm_encoder": "facebook/esm2_t33_650M_UR50D",
+  "esm_revision": "08e4846e537177426273712802403f7ba8261b6c",
+  "historical_feature_precision": "bf16 compute, float16 storage",
+  "archived_checkpoints": {
+    "0": "c3ae29ac121ffeba26f456b60bae45a77bffba32d0d963d280366293ae3fdbb0",
+    "1": "f6ace6ca579663776b0534b7212cf9492eb34b2adb14c11aa3e906852ee205ec",
+    "2": "2b02cf8a95e8efff500c035f79156ff27b7ebc3ca34251ac40bb205a20b00a62"
+  }
+}
