@@ -1,4 +1,4 @@
-# Release inference and DPO continuation. CUDA experiments used torch 2.8.0+cu128.
+# Generator training and inference.
 torch==2.8.0
 numpy>=1.26,<3
 pandas>=2.2,<3
