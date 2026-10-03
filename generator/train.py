@@ -1,4 +1,4 @@
-"""Reproduce fixed-1000-update Pareto-DPO from the packaged generator initialization.
+"""Reproduce fixed-1000-update Pareto-DPO from a supervised PRISM generator checkpoint.
 
 Preferences are computational PRISM predictions, not experimental measurements.
 Only the original DPO parameter subset is updated. No best-epoch selection.
@@ -8,10 +8,10 @@ import json
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import torch
 from torch.nn import functional as F
 from model import AA, TARGET, STOP, load, configure_dpo
+from training import sha, write_json
 
 ROOT = Path(__file__).resolve().parent
 
@@ -33,6 +33,7 @@ def dpo_loss(chosen, rejected, reference):
 
 
 def load_pairs(device):
+    import pandas as pd
     rows = pd.read_csv(ROOT / 'data/preferences.csv')
     requests = json.loads((ROOT / 'data/requests.json').read_text())
     def encode(sequences):
@@ -61,15 +62,35 @@ def main():
     p.add_argument('--seed', type=int, choices=[0, 1, 2], required=True)
     p.add_argument('--device', default='cuda')
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--initialization', type=Path, help='Supervised PRISM checkpoint; defaults to the packaged initialization for this seed.')
     p.add_argument('--resume', action='store_true')
     args = p.parse_args()
+    initialization = args.initialization or ROOT / f'initialization/seed{args.seed}.pt'
+    manifest = dict(seed=args.seed, initialization_sha256=sha(initialization),
+                    preferences_sha256=sha(ROOT / 'data/preferences.csv'),
+                    requests_sha256=sha(ROOT / 'data/requests.json'),
+                    code_sha256=sha(Path(__file__)), model_sha256=sha(ROOT / 'model.py'),
+                    device=args.device, torch=str(torch.__version__), cuda=torch.version.cuda)
+    args.output.mkdir(parents=True, exist_ok=True)
+    config_path = args.output / 'config.json'
+    if config_path.exists():
+        if json.loads(config_path.read_text()) != manifest:
+            raise ValueError('DPO resume initialization, data, code or environment changed.')
+    elif args.resume:
+        raise FileNotFoundError('No matching DPO run to resume.')
+    else:
+        if any(args.output.iterdir()):
+            raise FileExistsError('Use a new DPO output directory.')
+        write_json(config_path, manifest)
     torch.set_num_threads(2)
     torch.manual_seed(2026111400 + args.seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(2026111400 + args.seed)
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
-    model, original = load(ROOT / f'initialization/seed{args.seed}.pt', args.device)
+    model, original = load(initialization, args.device)
+    if original['seed'] != args.seed:
+        raise ValueError('Initialization checkpoint seed mismatch.')
     configure_dpo(model)
     rows, chosen, rejected, conditions = load_pairs(args.device)
     train_indices = np.flatnonzero(rows.split.to_numpy() == 'train')
