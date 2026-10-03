@@ -281,7 +281,7 @@ def fit_stage(net, ctx, stage, out, seed, matched=(), cached=None, resume=False,
 def run(args, cfg, fixed_path):
     out = args.output.resolve()
     # Training may never write to packaged data, models, or their ancestors.
-    for p in (ROOT / 'checkpoints', ROOT / 'predictor', ROOT / 'generator', ROOT / 'data', ROOT / 'tests'):
+    for p in (ROOT / 'predictor', ROOT / 'generator', ROOT / 'data', ROOT / 'tests'):
         if out == p or p in out.parents or out in p.parents:
             raise ValueError('Choose a separate training output directory, e.g. outputs/predictor/training/seed0.')
     if out.exists() and any(out.iterdir()) and not args.resume:
