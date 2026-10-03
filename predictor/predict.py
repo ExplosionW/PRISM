@@ -1,7 +1,4 @@
-"""Load released PRISM without historical filesystem paths.
-Input NPZ: sequences [N], esm33 [N,10,1280], output: predictions [N,18].
-ESM features must be residue-only ESM2 t33 650M layer33, not pooled features.
-"""
+"""Predict activity from an NPZ containing sequences and ESM-2 residue features."""
 from pathlib import Path
 import sys,argparse
 import numpy as np

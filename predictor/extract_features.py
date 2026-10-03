@@ -1,7 +1,4 @@
-"""Frozen ESM2 L33 residue features, historical mixed precision by default.
-Input CSV column 'sequence'; exact 10-mer strings only. Requires GPU for bf16.
-Encoder revision and numerical precision are recorded in the feature archive.
-"""
+"""Extract ESM-2 residue features for ten-residue peptides from a sequence CSV."""
 from pathlib import Path
 import argparse
 import numpy as np,pandas as pd,torch

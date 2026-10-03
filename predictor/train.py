@@ -1,8 +1,4 @@
-"""Train the fixed three-stage PRISM predictor recipe; no ablation options.
-
-Task layers are initialized afresh. ESM is frozen; the task LM starts from its
-original pretrained initialization, never from a released final predictor.
-"""
+"""Train the three-stage PRISM predictor."""
 import argparse
 import hashlib
 import json
@@ -65,12 +61,9 @@ def check_assets(cfg, lm_path):
 
 
 def historical_pair_count(labels):
-    """Retain the historical unused pair-index RNG draws, without pair forwards.
+    """Preserve the training RNG stream using the original pair-pool size.
 
-    Pair ranking was replaced by minibatch ListNet in the original 7.09 recipe.
-    The old loop still drew 256 indices per batch. Only the original pool size
-    affects these draws; pair identities no longer enter the loss.
-    """
+    Pair identities do not enter the ListNet loss."""
     count = 0
     for a in labels.T:
         ix = np.where(a >= np.quantile(a, .5))[0]
@@ -177,7 +170,7 @@ def evaluate(net, ctx, cached=None):
 
 
 def fit_stage(net, ctx, stage, out, seed, matched=(), cached=None, resume=False, after_epoch=None):
-    """Fixed stage loop; after_epoch is used only by interruption/resume tests."""
+    """Train one stage with checkpointing and resume support."""
     out.mkdir(parents=True, exist_ok=True)
     best_path, resume_path = out / 'best.pt', out / 'resume.pt'
     if (out / 'done.json').exists():

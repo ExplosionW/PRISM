@@ -1,4 +1,4 @@
-"""Fixed training objective of the archived PRISM 7.09% predictor."""
+"""PRISM predictor training loss."""
 import torch
 
 

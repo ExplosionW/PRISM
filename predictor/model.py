@@ -1,8 +1,4 @@
-"""PRISM predictor architecture used by the released checkpoints.
-
-Model definitions extracted from the original implementation. Parameter names,
-shapes and forward operations are retained for checkpoint compatibility.
-"""
+"""PRISM predictor architecture."""
 import numpy as np
 import torch
 from torch import nn
@@ -14,7 +10,7 @@ def encode(seqs, L=10):
     return np.array([[ix.get(c, 20) for c in str(s).strip()[:L]] for s in seqs], np.int64)
 
 class DeCleaveLM(nn.Module):
-    """小型 encoder-only transformer；`encode()` 给下游用，`forward()` 出 MLM logits。"""
+    """Peptide language model with residue embeddings and masked-token prediction."""
 
     def __init__(s, L=10, d=128, layers=4, heads=4, ff=256, pdrop=0.1):
         super().__init__()
@@ -35,7 +31,7 @@ class DeCleaveLM(nn.Module):
         return s.head(s.encode(Z))
 
 class R8Net(nn.Module):
-    """R1 的 FiLM 主干 + 度量分支。h_p 复用，不另起编码器。"""
+    """Enzyme-conditioned peptide predictor with a metric branch."""
 
     def __init__(s, P, L=10, d=96, m=32, hid=384, pdrop=0.15, de=32,
                  Emb=None, esm_dim=0, zdim=64, kappa=10.0, use_metric=True,
@@ -377,7 +373,7 @@ class PocketPair(nn.Module):
         return baseline_y + (raw - baseline_raw) * self.gh[None]
 
 class AblatedBase(R8Net):
-    """Same parameter names/shapes; one train-time intervention per arm."""
+    """Peptide backbone; released models use the full configuration."""
     def __init__(self, *args, arm='full', **kwargs):
         super().__init__(*args, **kwargs)
         self.arm = arm
