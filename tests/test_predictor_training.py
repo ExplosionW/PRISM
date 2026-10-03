@@ -133,7 +133,7 @@ class TrainingTests(unittest.TestCase):
 
     def test_archive_weights_unchanged(self):
         for seed, expected in self.cfg['archived_checkpoints'].items():
-            self.assertEqual(training.sha(ROOT / f'checkpoints/predictor/seed{seed}.pt'), expected)
+            self.assertEqual(training.sha(ROOT / f'predictor/checkpoints/seed{seed}.pt'), expected)
 
     def test_adapter_resume_preserves_post_initialization_rng(self):
         ctx = self.context(epochs=3)
