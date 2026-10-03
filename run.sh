@@ -71,7 +71,7 @@ predictor() {
       "$PYTORCH_PYTHON" predictor/extract_features.py --input "$input" --output "$FEATURE_DIR/$split.npz" --device "$DEVICE" --precision "$FEATURE_PRECISION"
     fi
     for seed in $SEEDS; do
-      "$PYTORCH_PYTHON" predictor/predict.py --checkpoint "checkpoints/predictor/seed${seed}.pt" --input "$FEATURE_DIR/$split.npz" --output "$OUT/predictor/predictions/${split}_seed${seed}.npz" --device "$DEVICE"
+      "$PYTORCH_PYTHON" predictor/predict.py --checkpoint "predictor/checkpoints/seed${seed}.pt" --input "$FEATURE_DIR/$split.npz" --output "$OUT/predictor/predictions/${split}_seed${seed}.npz" --device "$DEVICE"
     done
   done
   "$METRICS_PYTHON" evaluation/evaluate_selection.py --predictions "$OUT/predictor/predictions" --output "$OUT/predictor/metrics" --seeds $SEEDS
