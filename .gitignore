@@ -9,3 +9,7 @@ generator/checkpoints/*
 !generator/checkpoints/seed0.pt
 !generator/checkpoints/seed1.pt
 !generator/checkpoints/seed2.pt
+predictor/checkpoints/*
+!predictor/checkpoints/seed0.pt
+!predictor/checkpoints/seed1.pt
+!predictor/checkpoints/seed2.pt
