@@ -10,7 +10,7 @@ The **PRISM generator** designs peptide sequences conditioned on requested activ
 
 This repository provides pretrained predictor and generator weights, their training pipelines, and tools for peptide generation, prediction and evaluation.
 
-![PRISM](assets/prism_overview.png)
+![PRISM](assets/prism_overview.svg)
 
 ## Table of contents
 
