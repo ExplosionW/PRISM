@@ -59,11 +59,10 @@ PRISM/
 ├── data/                      # Predictor training, validation, test and OOD data
 ├── evaluation/                # Prediction and generation evaluation scripts
 ├── requirements/              # Python dependencies
-├── tests/                     # Reference outputs and model/training checks
+├── tests/                     # Model loading, prediction and training checks
 ├── assets/                    # Images used in this README
 ├── README.md                  # Installation, commands and data formats
-├── run.sh                     # Training, prediction, generation and evaluation entry point
-└── .gitignore                 # Exclude caches, outputs and extra checkpoint files
+└── run.sh                     # Training, prediction, generation and evaluation entry point
 ```
 
 ### Check the installation
@@ -89,7 +88,7 @@ SEEDS="0" RESUME=1 DEVICE=cuda bash run.sh train-predictor
 
 Training runs three stages: task-backbone training, pretrained task-LM integration, and shared-query adapter training. ESM features remain frozen. The task-LM initialization is included in `predictor/initialization/`; training settings are in `predictor/configs/prism.json`.
 
-Models are saved to `outputs/predictor/training/seed{0,1,2}/final.pt`. Pass a new model to `predictor/predict.py --checkpoint` to use it for prediction. Retraining results can vary with the computing environment.
+Models are saved to `outputs/predictor/training/seed{0,1,2}/final.pt`. Pass a new model to `predictor/predict.py --checkpoint` to use it for prediction.
 
 ### PRISM generator full training pipeline
 
@@ -135,8 +134,6 @@ DEVICE=cuda FEATURE_PRECISION=bf16 bash run.sh predictor
 
 This evaluates validation, benchmark test and OOD sequences with seeds 0, 1 and 2. ESM-2 650M is downloaded on first use; extracted features are cached in `outputs/features/`.
 
-The released predictor has a three-seed mean benchmark Precision of **7.09%** under Count/Pareto-Max, averaged across 18 targets at Top100 per target.
-
 For custom ten-residue sequences, provide a CSV with a `sequence` column:
 
 ```sh
@@ -175,7 +172,7 @@ python generator/evaluate_checkpoint.py --checkpoint generator/checkpoints/seed0
   --device cuda --output outputs/development_nll.json
 ```
 
-Sampling temperature defaults to 1.2 for conditional generation and 1.0 for unconditional generation. Generated sequences are saved as CSV files. Scoring exports predicted activity profiles and Top24/100 MMP13 candidates; these are computational predictions, not experimental validation.
+Sampling temperature defaults to 1.2 for conditional generation and 1.0 for unconditional generation. Generated sequences are saved as CSV files. Scoring exports predicted activity profiles and ranked Top24/Top100 MMP13 candidates.
 
 Use each script’s `--help` for additional options.
 
@@ -211,7 +208,7 @@ Use each script’s `--help` for additional options.
 
 Benchmark CSVs contain `sequence` followed by 18 activity columns. The matching NPZ files contain sequences, measured labels, rounded conditions and tokens. Split membership and enzyme orders are provided in `data/split_ids.json` and each dataset’s `target_order.json`.
 
-Benchmark data use cleavage Z-scores; OOD data use published experimental efficiencies. OOD evaluation uses thresholds derived from those measurements and is retrospective. Data sources and preprocessing are documented in `data/source_manifest.json`.
+Benchmark data use cleavage Z-scores; OOD data use published experimental efficiencies. OOD evaluation uses thresholds derived from those measurements. Data sources and preprocessing are documented in `data/source_manifest.json`.
 
 ### Generator data
 
@@ -239,4 +236,4 @@ Generator conditions use 18-enzyme Z-score profiles rounded to 0.1. Preference p
 | `generator/quality/` | Sequence-quality summaries |
 | `generator/prism_scores/` | Predicted activity profiles, scores and selected peptides |
 | `generator/training/seed*/` | Complete generator training: stage checkpoints, histories and final model |
-| `generator/dpo/seed*/` | Checkpoints from the DPO-only shortcut |
+| `generator/dpo/seed*/` | Checkpoints from DPO training with the supplied initialization |
