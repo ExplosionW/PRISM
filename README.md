@@ -125,7 +125,7 @@ DPO-only models are saved to `outputs/generator/dpo/seed{0,1,2}/last.pt`. Use `S
 
 ## Predicting peptide activity
 
-![PRISM predictor](assets/predictor_model.png)
+![PRISM architecture](assets/predictor_model.svg)
 
 ```sh
 DEVICE=cuda FEATURE_PRECISION=bf16 bash run.sh predictor
